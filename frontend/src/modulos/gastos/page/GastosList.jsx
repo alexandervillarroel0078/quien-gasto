@@ -147,7 +147,8 @@ export default function GastosList() {
         data={items}
         onRowClick={g => ver(g.id)}
         renderActions={g => {
-          const esMio = g.usuario_login_id === user.id;
+          const esMio = g.usuario_login_id === user.usuario_id;
+
 
           return (
             <ActionMenu

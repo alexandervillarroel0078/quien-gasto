@@ -3,14 +3,22 @@ from datetime import datetime
 from typing import Optional
 
 
+class PersonaMini(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
+
+
 class BitacoraResponse(BaseModel):
     id: int
     entidad: str
     entidad_id: int
     accion: str
     descripcion: Optional[str]
-    usuario_id: Optional[int]
     fecha: datetime
+    usuario: Optional[PersonaMini]
 
     class Config:
         from_attributes = True
@@ -22,9 +30,3 @@ class BitacoraCreate(BaseModel):
     accion: str
     descripcion: Optional[str] = None
     usuario_id: Optional[int] = None
-
-
-class BitacoraFilter(BaseModel):
-    entidad: Optional[str] = None
-    usuario_id: Optional[int] = None
-    accion: Optional[str] = None

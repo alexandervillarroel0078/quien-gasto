@@ -8,41 +8,22 @@ import Pagination from "../../../shared/components/Pagination";
 import { listarBitacora } from "../../../api/bitacora";
 
 export default function BitacoraList() {
-  // ======================
-  // Estados
-  // ======================
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const size = 20;
 
-  const [q, setQ] = useState("");
-
-  // ======================
-  // Cargar
-  // ======================
-  const cargar = useCallback(
-    async (p = page) => {
-      const res = await listarBitacora(p, size, q);
-      setItems(res.data.items);
-      setPage(res.data.page);
-      setPages(res.data.pages);
-    },
-    [page, size, q]
-  );
+  const cargar = useCallback(async (p) => {
+    const res = await listarBitacora(p, size);
+    setItems(res.data.items);
+    setPage(res.data.page);
+    setPages(res.data.pages);
+  }, []);
 
   useEffect(() => {
     cargar(page);
   }, [page, cargar]);
 
-  useEffect(() => {
-    const t = setTimeout(() => cargar(1), 300);
-    return () => clearTimeout(t);
-  }, [q]);
-
-  // ======================
-  // Columnas
-  // ======================
   const columns = [
     {
       key: "index",
@@ -67,28 +48,17 @@ export default function BitacoraList() {
       label: "Descripción",
     },
     {
-      key: "usuario_id",
+      key: "usuario",
       label: "Usuario",
-      render: b => `ID ${b.usuario_id ?? "-"}`,
+      render: b => (b.usuario ? b.usuario.nombre : "-"),
     },
   ];
 
-  // ======================
-  // Render
-  // ======================
   return (
     <Layout>
-      <PageHeader
-        title="📜 Bitácora"
-        searchValue={q}
-        onSearch={setQ}
-        searchPlaceholder="Buscar por entidad o acción..."
-      />
+      <PageHeader title="📜 Bitácora" />
 
-      <Table
-        columns={columns}
-        data={items}
-      />
+      <Table columns={columns} data={items} />
 
       <Pagination
         page={page}

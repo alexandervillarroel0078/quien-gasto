@@ -1,14 +1,12 @@
-//  frontend/src/api/bitacora.js
+// frontend/src/api/bitacora.js
 import api from "./api";
 
-// =======================
-// LISTAR BITÁCORA
-// =======================
-export const listarBitacora = () =>
-  api.get("/bitacora");
-
-// =======================
-// OBTENER POR ID
-// =======================
-export const obtenerBitacora = (id) =>
-  api.get(`/bitacora/${id}`);
+export const listarBitacora = (
+  page = 1,
+  size = 20,
+  entidad = null,
+  accion = null
+) =>
+  api.get("/bitacora", {
+    params: { page, size, entidad, accion },
+  });

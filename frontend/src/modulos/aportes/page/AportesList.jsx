@@ -129,7 +129,7 @@ export default function AportesList() {
         data={items}
         onRowClick={ver}
         renderActions={(a) => {
-          const esMio = a.usuario_login_id === user.id;
+          const esMio = a.usuario_login_id === user.usuario_id;
 
           return (
             <ActionMenu
