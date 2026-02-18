@@ -1,6 +1,5 @@
-// frontend/src/modulos/resumen/pages/ResumenPeriodo.jsx
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import Layout from "../../../layouts/Layout";
 import Table from "../../../shared/components/Table";
@@ -12,6 +11,7 @@ import { resumenPorPeriodo } from "../../../api/resumen";
 
 export default function ResumenPeriodo() {
   const { periodoId } = useParams();
+  const navigate = useNavigate();
 
   const [periodos, setPeriodos] = useState([]);
   const [periodoActual, setPeriodoActual] = useState(
@@ -30,6 +30,7 @@ export default function ResumenPeriodo() {
 
       if (!periodoActual && lista.length) {
         setPeriodoActual(lista[0].id);
+        navigate(`/resumen/periodo/${lista[0].id}`, { replace: true });
       }
     };
 
@@ -57,7 +58,6 @@ export default function ResumenPeriodo() {
     {
       key: "nombre",
       label: "Persona",
-      render: r => r.nombre,
     },
     {
       key: "total_aportes",
@@ -95,7 +95,11 @@ export default function ResumenPeriodo() {
         rightContent={
           <Select
             value={periodoActual}
-            onChange={e => setPeriodoActual(Number(e.target.value))}
+            onChange={e => {
+              const id = Number(e.target.value);
+              setPeriodoActual(id);
+              navigate(`/resumen/periodo/${id}`);
+            }}
             style={{ minWidth: 220 }}
           >
             {periodos.map(p => (

@@ -6,8 +6,5 @@ export default (
   <>
     {/* Vista base (desde menú) */}
     <Route path="/resumen" element={<ResumenPeriodo />} />
-
-    {/* Deep link opcional */}
-    <Route path="/resumen/:periodoId" element={<ResumenPeriodo />} />
   </>
 );

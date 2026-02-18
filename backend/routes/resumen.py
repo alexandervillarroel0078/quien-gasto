@@ -1,4 +1,3 @@
-# backend/routers/resumen.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -18,49 +17,66 @@ def resumen_por_periodo(
     periodo_id: int,
     db: Session = Depends(get_db),
 ):
+    # ======================
+    # Validar periodo
+    # ======================
     periodo = db.get(Periodo, periodo_id)
     if not periodo:
-        raise HTTPException(404, "Periodo no encontrado")
+        raise HTTPException(status_code=404, detail="Periodo no encontrado")
 
-    personas = (
-        db.query(Persona)
+    # ======================
+    # Subquery aportes
+    # ======================
+    aportes_sq = (
+        db.query(
+            Aporte.persona_id.label("persona_id"),
+            func.coalesce(func.sum(Aporte.monto), 0).label("total_aportes")
+        )
+        .filter(Aporte.periodo_id == periodo_id)
+        .group_by(Aporte.persona_id)
+        .subquery()
+    )
+
+    # ======================
+    # Subquery gastos
+    # ======================
+    gastos_sq = (
+        db.query(
+            Gasto.persona_id.label("persona_id"),
+            func.coalesce(func.sum(Gasto.monto), 0).label("total_gastos")
+        )
+        .filter(Gasto.periodo_id == periodo_id)
+        .group_by(Gasto.persona_id)
+        .subquery()
+    )
+
+    # ======================
+    # Query final
+    # ======================
+    rows = (
+        db.query(
+            Persona.id.label("persona_id"),
+            Persona.nombre,
+            func.coalesce(aportes_sq.c.total_aportes, 0).label("total_aportes"),
+            func.coalesce(gastos_sq.c.total_gastos, 0).label("total_gastos"),
+        )
+        .outerjoin(aportes_sq, aportes_sq.c.persona_id == Persona.id)
+        .outerjoin(gastos_sq, gastos_sq.c.persona_id == Persona.id)
         .filter(Persona.activo == True)
         .order_by(Persona.nombre.asc())
         .all()
     )
 
-    resultado: list[ResumenPersonaResponse] = []
-
-    for persona in personas:
-        total_aportes = (
-            db.query(func.coalesce(func.sum(Aporte.monto), 0))
-            .filter(
-                Aporte.persona_id == persona.id,
-                Aporte.periodo_id == periodo_id,
-            )
-            .scalar()
+    # ======================
+    # Respuesta
+    # ======================
+    return [
+        ResumenPersonaResponse(
+            persona_id=r.persona_id,
+            nombre=r.nombre,
+            total_aportes=float(r.total_aportes),
+            total_gastos=float(r.total_gastos),
+            balance=float(r.total_aportes - r.total_gastos),
         )
-
-        total_gastos = (
-            db.query(func.coalesce(func.sum(Gasto.monto), 0))
-            .filter(
-                Gasto.persona_id == persona.id,
-                Gasto.periodo_id == periodo_id,
-            )
-            .scalar()
-        )
-
-        total_aportes = float(total_aportes or 0)
-        total_gastos = float(total_gastos or 0)
-
-        resultado.append(
-            ResumenPersonaResponse(
-                persona_id=persona.id,
-                nombre=persona.nombre,
-                total_aportes=total_aportes,
-                total_gastos=total_gastos,
-                balance=total_aportes - total_gastos,
-            )
-        )
-
-    return resultado
+        for r in rows
+    ]
