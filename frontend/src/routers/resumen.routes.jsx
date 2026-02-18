@@ -4,7 +4,6 @@ import RoleRoute from "../auth/RoleRoute";
 import ResumenPeriodo from "../modulos/resumen/page/ResumenPeriodo";
 
 export default (
-  <Route element={<RoleRoute />}>
-    <Route path="/resumen/:periodoId" element={<ResumenPeriodo />} />
-  </Route>
+     <Route path="/resumen/:periodoId" element={<ResumenPeriodo />} />
+   
 );

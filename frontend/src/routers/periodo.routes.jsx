@@ -4,7 +4,6 @@ import RoleRoute from "../auth/RoleRoute";
 import PeriodosList from "../modulos/periodos/page/PeriodosList";
 
 export default (
-  <Route element={<RoleRoute />}>
-    <Route path="/periodos" element={<PeriodosList />} />
-  </Route>
+     <Route path="/periodos" element={<PeriodosList />} />
+ 
 );

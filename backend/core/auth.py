@@ -63,25 +63,24 @@ def get_current_user(
     db: Session = Depends(get_db)
 ):
     """
-    Retorna el usuario actual con su rol.
-    Esta función es usada por permisos y routers.
+    Retorna el usuario actual (UsuarioLogin + Persona).
     """
 
-    usuario = (
-        db.query(models.UsuarioPerfil)
-        .filter(models.UsuarioPerfil.login_id == token_data["id"])
+    usuario_login = (
+        db.query(models.UsuarioLogin)
+        .filter(models.UsuarioLogin.id == token_data["id"])
         .first()
     )
 
-    if not usuario:
+    if not usuario_login:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuario no encontrado"
         )
 
     return {
-        "id": usuario.id,
-        "login_id": token_data["id"],
-        "nombre": usuario.nombre,
-        "rol": token_data["rol"]
+        "id": usuario_login.id,                 # id de login
+        "correo": usuario_login.correo,
+        "rol": token_data["rol"],               # si lo sigues usando
+        "persona_id": usuario_login.persona_id  # 🔑 CLAVE PARA APORTES/GASTOS
     }
