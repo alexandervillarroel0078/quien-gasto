@@ -4,6 +4,12 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
+class PersonaMini(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
 
 class AporteCreate(BaseModel):
     monto: Decimal
@@ -21,7 +27,7 @@ class AporteUpdate(BaseModel):
 
 class AporteResponse(BaseModel):
     id: int
-    persona_id: int
+    persona: PersonaMini
     usuario_login_id: int
     monto: Decimal
     fecha: date

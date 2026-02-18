@@ -27,12 +27,16 @@ const NAV_MODULES = {
     ],
   },
 
-  resumen: {
+ resumen: {
     title: "Resumen",
     icon: "📊",
     routes: ["/resumen"],
     items: [
-      { label: "Resumen por periodo", path: "/resumen", icon: "📈" },
+      {
+        label: "Resumen por periodo",
+        path: "/resumen",      // ✅ CORRECTO
+        icon: "📈",
+      },
     ],
   },
 

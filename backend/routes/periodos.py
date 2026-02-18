@@ -1,3 +1,4 @@
+# backend/routers/periodos.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -7,7 +8,6 @@ from schemas.periodo import PeriodoCreate, PeriodoResponse
 from schemas.common import Page
 
 router = APIRouter(prefix="/periodos", tags=["Periodos"])
-
 
 # =========================
 # LISTAR
@@ -38,7 +38,6 @@ def listar(
         "pages": (total + size - 1) // size,
     }
 
-
 # =========================
 # CREAR
 # =========================
@@ -53,9 +52,8 @@ def crear(
     db.refresh(periodo)
     return periodo
 
-
 # =========================
-# OBTENER POR ID (opcional)
+# OBTENER
 # =========================
 @router.get("/{id}", response_model=PeriodoResponse)
 def obtener(
@@ -67,9 +65,8 @@ def obtener(
         raise HTTPException(404, "Periodo no encontrado")
     return periodo
 
-
 # =========================
-# CERRAR PERIODO
+# CERRAR
 # =========================
 @router.post("/{id}/cerrar")
 def cerrar(

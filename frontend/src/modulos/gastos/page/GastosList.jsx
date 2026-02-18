@@ -17,7 +17,11 @@ import {
   eliminarGasto,
 } from "../../../api/gasto";
 
+import useAuth from "../../../auth/useAuth";
+
 export default function GastosList() {
+  const { user } = useAuth(); // 👈 USUARIO LOGUEADO
+
   // ======================
   // Estados
   // ======================
@@ -113,6 +117,11 @@ export default function GastosList() {
       label: "Concepto",
     },
     {
+      key: "persona",
+      label: "Persona",
+      render: g => g.persona?.nombre || "-",
+    },
+    {
       key: "monto",
       label: "Monto",
       render: g => `Bs ${g.monto}`,
@@ -137,28 +146,36 @@ export default function GastosList() {
         columns={columns}
         data={items}
         onRowClick={g => ver(g.id)}
-        renderActions={g => (
-          <ActionMenu
-            primaryAction={
-              <Button size="sm" onClick={() => ver(g.id)}>
-                Ver
-              </Button>
-            }
-            items={[
-              {
-                label: "Editar",
-                icon: "✏️",
-                onClick: () => editar(g.id),
-              },
-              {
-                label: "Eliminar",
-                icon: "🗑",
-                danger: true,
-                onClick: () => eliminar(g.id),
-              },
-            ]}
-          />
-        )}
+        renderActions={g => {
+          const esMio = g.usuario_login_id === user.id;
+
+          return (
+            <ActionMenu
+              primaryAction={
+                <Button size="sm" onClick={() => ver(g.id)}>
+                  Ver
+                </Button>
+              }
+              items={[
+                ...(esMio
+                  ? [
+                      {
+                        label: "Editar",
+                        icon: "✏️",
+                        onClick: () => editar(g.id),
+                      },
+                      {
+                        label: "Eliminar",
+                        icon: "🗑",
+                        danger: true,
+                        onClick: () => eliminar(g.id),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          );
+        }}
       />
 
       <Pagination

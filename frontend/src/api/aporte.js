@@ -2,18 +2,22 @@
 import api from "./api";
 
 // =======================
-// LISTAR (paginado)
+// LISTAR
 // =======================
 export const listarAportes = (page = 1, size = 20, q = "", periodo_id = null) =>
-  api.get("/aportes", {
-    params: { page, size, q, periodo_id },
-  });
+  api.get("/aportes", { params: { page, size, q, periodo_id } });
 
 // =======================
 // CREAR
 // =======================
 export const crearAporte = (data) =>
   api.post("/aportes", data);
+
+// =======================
+// ACTUALIZAR ✅ NUEVO
+// =======================
+export const actualizarAporte = (id, data) =>
+  api.put(`/aportes/${id}`, data);
 
 // =======================
 // ELIMINAR

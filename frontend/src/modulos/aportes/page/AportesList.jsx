@@ -12,17 +12,19 @@ import AporteForm from "../components/AporteForm";
 import {
   listarAportes,
   crearAporte,
+  actualizarAporte,
   eliminarAporte,
 } from "../../../api/aporte";
 
+import useAuth from "../../../auth/useAuth";
+
 export default function AportesList() {
-  // ======================
-  // Estados
-  // ======================
+  const { user } = useAuth();
+
   const [items, setItems] = useState([]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [actual, setActual] = useState(null);
-  const [modo, setModo] = useState("crear"); // crear | ver
+  const [modo, setModo] = useState("crear"); // crear | ver | editar
 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
@@ -30,9 +32,6 @@ export default function AportesList() {
 
   const [q, setQ] = useState("");
 
-  // ======================
-  // Cargar
-  // ======================
   const cargar = useCallback(
     async (p = page) => {
       const res = await listarAportes(p, size, q);
@@ -61,19 +60,31 @@ export default function AportesList() {
     setMostrarForm(true);
   };
 
-  const ver = aporte => {
+  const ver = (aporte) => {
     setActual(aporte);
     setModo("ver");
     setMostrarForm(true);
   };
 
-  const guardar = async data => {
-    await crearAporte(data);
+  const editar = (aporte) => {
+    setActual(aporte);
+    setModo("editar");
+    setMostrarForm(true);
+  };
+
+  const guardar = async (data) => {
+    if (modo === "crear") {
+      await crearAporte(data);
+    } else if (modo === "editar") {
+      await actualizarAporte(actual.id, data);
+    }
+
     setMostrarForm(false);
+    setActual(null);
     cargar(page);
   };
 
-  const eliminar = async id => {
+  const eliminar = async (id) => {
     if (!window.confirm("¿Eliminar este aporte?")) return;
     await eliminarAporte(id);
     cargar(page);
@@ -89,23 +100,19 @@ export default function AportesList() {
       render: (_, i) => i + 1 + (page - 1) * size,
     },
     {
-      key: "fecha",
-      label: "Fecha",
+      key: "persona",
+      label: "Persona",
+      render: a => a.persona?.nombre ?? "-",
     },
+    { key: "fecha", label: "Fecha" },
     {
       key: "monto",
       label: "Monto",
       render: a => `Bs ${a.monto}`,
     },
-    {
-      key: "nota",
-      label: "Nota",
-    },
+    { key: "nota", label: "Nota" },
   ];
 
-  // ======================
-  // Render
-  // ======================
   return (
     <Layout>
       <PageHeader
@@ -120,24 +127,37 @@ export default function AportesList() {
       <Table
         columns={columns}
         data={items}
-        onRowClick={a => ver(a)}
-        renderActions={a => (
-          <ActionMenu
-            primaryAction={
-              <Button size="sm" onClick={() => ver(a)}>
-                Ver
-              </Button>
-            }
-            items={[
-              {
-                label: "Eliminar",
-                icon: "🗑",
-                danger: true,
-                onClick: () => eliminar(a.id),
-              },
-            ]}
-          />
-        )}
+        onRowClick={ver}
+        renderActions={(a) => {
+          const esMio = a.usuario_login_id === user.id;
+
+          return (
+            <ActionMenu
+              primaryAction={
+                <Button size="sm" onClick={() => ver(a)}>
+                  Ver
+                </Button>
+              }
+              items={
+                esMio
+                  ? [
+                      {
+                        label: "Editar",
+                        icon: "✏️",
+                        onClick: () => editar(a),
+                      },
+                      {
+                        label: "Eliminar",
+                        icon: "🗑",
+                        danger: true,
+                        onClick: () => eliminar(a.id),
+                      },
+                    ]
+                  : []
+              }
+            />
+          );
+        }}
       />
 
       <Pagination
@@ -153,6 +173,8 @@ export default function AportesList() {
         title={
           modo === "crear"
             ? "➕ Nuevo Aporte"
+            : modo === "editar"
+            ? "✏️ Editar Aporte"
             : "👁️ Detalle Aporte"
         }
         width={360}
@@ -161,7 +183,7 @@ export default function AportesList() {
           initialData={actual}
           onSubmit={guardar}
           soloLectura={modo === "ver"}
-          textoBoton="Guardar"
+          textoBoton={modo === "crear" ? "Guardar" : "Actualizar"}
         />
       </Drawer>
     </Layout>

@@ -1,3 +1,4 @@
+# backend/routers/gastos.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -10,9 +11,8 @@ from core.auth import get_current_user
 
 router = APIRouter(prefix="/gastos", tags=["Gastos"])
 
-
 # =========================
-# LISTAR (paginado + filtros)
+# LISTAR
 # =========================
 @router.get("/", response_model=Page[GastoResponse])
 def listar_gastos(
@@ -22,12 +22,8 @@ def listar_gastos(
     periodo_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    query = (
-        db.query(Gasto)
-        .join(Persona, Gasto.persona_id == Persona.id)
-    )
+    query = db.query(Gasto).join(Persona)
 
-    # 🔎 búsqueda
     if q and q.strip():
         query = query.filter(
             or_(
@@ -36,15 +32,13 @@ def listar_gastos(
             )
         )
 
-    # 📆 filtro por periodo
     if periodo_id:
         query = query.filter(Gasto.periodo_id == periodo_id)
 
     total = query.count()
 
     items = (
-        query
-        .order_by(Gasto.fecha.desc(), Gasto.id.desc())
+        query.order_by(Gasto.fecha.desc(), Gasto.id.desc())
         .offset((page - 1) * size)
         .limit(size)
         .all()
@@ -58,7 +52,6 @@ def listar_gastos(
         "pages": (total + size - 1) // size,
     }
 
-
 # =========================
 # CREAR
 # =========================
@@ -66,7 +59,7 @@ def listar_gastos(
 def crear(
     data: GastoCreate,
     db: Session = Depends(get_db),
-    usuario=Depends(get_current_user),
+    usuario: dict = Depends(get_current_user),
 ):
     if data.periodo_id:
         periodo = db.get(Periodo, data.periodo_id)
@@ -74,8 +67,8 @@ def crear(
             raise HTTPException(400, "Periodo cerrado")
 
     gasto = Gasto(
-        persona_id=usuario.persona_id,
-        usuario_login_id=usuario.id,
+        persona_id=usuario["persona_id"],        # ✅
+        usuario_login_id=usuario["id"],           # ✅
         **data.model_dump()
     )
 
@@ -87,15 +80,14 @@ def crear(
         entidad="Gasto",
         entidad_id=gasto.id,
         accion="CREATE",
-        usuario_id=usuario.id,
+        usuario_id=usuario["id"],
     ))
     db.commit()
 
     return gasto
 
-
 # =========================
-# OBTENER POR ID
+# OBTENER
 # =========================
 @router.get("/{id}", response_model=GastoResponse)
 def obtener_gasto(
@@ -107,7 +99,6 @@ def obtener_gasto(
         raise HTTPException(404, "Gasto no encontrado")
     return gasto
 
-
 # =========================
 # ACTUALIZAR
 # =========================
@@ -116,17 +107,15 @@ def actualizar(
     id: int,
     data: GastoUpdate,
     db: Session = Depends(get_db),
-    usuario=Depends(get_current_user),
+    usuario: dict = Depends(get_current_user),
 ):
     gasto = db.get(Gasto, id)
     if not gasto:
         raise HTTPException(404, "Gasto no encontrado")
 
-    # 🔐 ownership
-    if gasto.usuario_login_id != usuario.id:
+    if gasto.usuario_login_id != usuario["id"]:
         raise HTTPException(403, "No autorizado")
 
-    # 🔒 periodo cerrado
     if gasto.periodo and gasto.periodo.cerrado:
         raise HTTPException(400, "Periodo cerrado")
 
@@ -140,12 +129,11 @@ def actualizar(
         entidad="Gasto",
         entidad_id=gasto.id,
         accion="UPDATE",
-        usuario_id=usuario.id,
+        usuario_id=usuario["id"],
     ))
     db.commit()
 
     return gasto
-
 
 # =========================
 # ELIMINAR
@@ -154,13 +142,12 @@ def actualizar(
 def eliminar(
     id: int,
     db: Session = Depends(get_db),
-    usuario=Depends(get_current_user),
+    usuario: dict = Depends(get_current_user),
 ):
     gasto = db.get(Gasto, id)
-    if not gasto or gasto.usuario_login_id != usuario.id:
+    if not gasto or gasto.usuario_login_id != usuario["id"]:
         raise HTTPException(403, "No autorizado")
 
-    # opcional: bloquear si periodo cerrado
     if gasto.periodo and gasto.periodo.cerrado:
         raise HTTPException(400, "Periodo cerrado")
 
@@ -170,7 +157,7 @@ def eliminar(
         entidad="Gasto",
         entidad_id=id,
         accion="DELETE",
-        usuario_id=usuario.id,
+        usuario_id=usuario["id"],
     ))
     db.commit()
 

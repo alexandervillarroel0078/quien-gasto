@@ -4,6 +4,13 @@ from decimal import Decimal
 from typing import Optional
 
 
+class PersonaMini(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
+
 # =========================
 # CREATE
 # =========================
@@ -29,7 +36,7 @@ class GastoUpdate(BaseModel):
 # =========================
 class GastoResponse(BaseModel):
     id: int
-    persona_id: int
+    persona: PersonaMini
     usuario_login_id: int
     concepto: str
     monto: Decimal
@@ -57,5 +64,5 @@ class GastoMini(BaseModel):
 # RESUMEN (para balances)
 # =========================
 class GastoResumen(BaseModel):
-    persona_id: int
+    persona: PersonaMini
     total: Decimal

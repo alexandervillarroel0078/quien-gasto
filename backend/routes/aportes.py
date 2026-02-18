@@ -1,3 +1,4 @@
+# backend/routers/aportes.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -10,9 +11,8 @@ from core.auth import get_current_user
 
 router = APIRouter(prefix="/aportes", tags=["Aportes"])
 
-
 # =========================
-# LISTAR (paginado + filtros)
+# LISTAR
 # =========================
 @router.get("/", response_model=Page[AporteResponse])
 def listar_aportes(
@@ -22,12 +22,8 @@ def listar_aportes(
     periodo_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    query = (
-        db.query(Aporte)
-        .join(Persona, Aporte.persona_id == Persona.id)
-    )
+    query = db.query(Aporte).join(Persona)
 
-    # 🔎 búsqueda
     if q and q.strip():
         query = query.filter(
             or_(
@@ -36,15 +32,13 @@ def listar_aportes(
             )
         )
 
-    # 📆 filtro por periodo
     if periodo_id:
         query = query.filter(Aporte.periodo_id == periodo_id)
 
     total = query.count()
 
     items = (
-        query
-        .order_by(Aporte.fecha.desc(), Aporte.id.desc())
+        query.order_by(Aporte.fecha.desc(), Aporte.id.desc())
         .offset((page - 1) * size)
         .limit(size)
         .all()
@@ -58,7 +52,6 @@ def listar_aportes(
         "pages": (total + size - 1) // size,
     }
 
-
 # =========================
 # CREAR
 # =========================
@@ -66,7 +59,7 @@ def listar_aportes(
 def crear(
     data: AporteCreate,
     db: Session = Depends(get_db),
-    usuario=Depends(get_current_user),
+    usuario: dict = Depends(get_current_user),
 ):
     if data.periodo_id:
         periodo = db.get(Periodo, data.periodo_id)
@@ -74,8 +67,8 @@ def crear(
             raise HTTPException(400, "Periodo cerrado")
 
     aporte = Aporte(
-        persona_id=usuario.persona_id,
-        usuario_login_id=usuario.id,
+        persona_id=usuario["persona_id"],
+        usuario_login_id=usuario["id"],
         **data.model_dump()
     )
 
@@ -87,49 +80,57 @@ def crear(
         entidad="Aporte",
         entidad_id=aporte.id,
         accion="CREATE",
-        usuario_id=usuario.id,
+        usuario_id=usuario["id"],
     ))
     db.commit()
 
     return aporte
 
-
 # =========================
-# OBTENER POR ID (opcional)
+# ELIMINAR
 # =========================
-@router.get("/{id}", response_model=AporteResponse)
-def obtener_aporte(
+@router.delete("/{id}")
+def eliminar(
     id: int,
     db: Session = Depends(get_db),
+    usuario: dict = Depends(get_current_user),
 ):
     aporte = db.get(Aporte, id)
-    if not aporte:
-        raise HTTPException(404, "Aporte no encontrado")
-    return aporte
+    if not aporte or aporte.usuario_login_id != usuario["id"]:
+        raise HTTPException(403, "No autorizado")
 
+    db.delete(aporte)
 
-# =========================
-# ACTUALIZAR (opcional)
-# =========================
+    db.add(Bitacora(
+        entidad="Aporte",
+        entidad_id=id,
+        accion="DELETE",
+        usuario_id=usuario["id"],
+    ))
+    db.commit()
+
+    return {"ok": True}
+
 @router.put("/{id}", response_model=AporteResponse)
 def actualizar(
     id: int,
     data: AporteUpdate,
     db: Session = Depends(get_db),
-    usuario=Depends(get_current_user),
+    usuario: dict = Depends(get_current_user),
 ):
     aporte = db.get(Aporte, id)
     if not aporte:
         raise HTTPException(404, "Aporte no encontrado")
 
-    # 🔐 ownership
-    if aporte.usuario_login_id != usuario.id:
+    # 🔐 solo el dueño puede editar
+    if aporte.usuario_login_id != usuario["id"]:
         raise HTTPException(403, "No autorizado")
 
-    # 🔒 periodo cerrado
+    # 🔒 opcional: bloquear si periodo cerrado
     if aporte.periodo and aporte.periodo.cerrado:
         raise HTTPException(400, "Periodo cerrado")
 
+    # aplicar cambios
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(aporte, k, v)
 
@@ -140,38 +141,8 @@ def actualizar(
         entidad="Aporte",
         entidad_id=aporte.id,
         accion="UPDATE",
-        usuario_id=usuario.id,
+        usuario_id=usuario["id"],
     ))
     db.commit()
 
     return aporte
-
-
-# =========================
-# ELIMINAR
-# =========================
-@router.delete("/{id}")
-def eliminar(
-    id: int,
-    db: Session = Depends(get_db),
-    usuario=Depends(get_current_user),
-):
-    aporte = db.get(Aporte, id)
-    if not aporte or aporte.usuario_login_id != usuario.id:
-        raise HTTPException(403, "No autorizado")
-
-    # opcional: bloquear si periodo cerrado
-    if aporte.periodo and aporte.periodo.cerrado:
-        raise HTTPException(400, "Periodo cerrado")
-
-    db.delete(aporte)
-
-    db.add(Bitacora(
-        entidad="Aporte",
-        entidad_id=id,
-        accion="DELETE",
-        usuario_id=usuario.id,
-    ))
-    db.commit()
-
-    return {"ok": True}

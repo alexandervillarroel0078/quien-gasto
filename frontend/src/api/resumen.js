@@ -1,8 +1,8 @@
-// src/api/resumen.js
+// frontend/src/api/resumen.js
 import api from "./api";
 
 // =======================
 // RESUMEN POR PERIODO
 // =======================
-export const resumenPorPeriodo = (periodo_id) =>
-  api.get(`/resumen/periodo/${periodo_id}`);
+export const resumenPorPeriodo = (periodoId) =>
+  api.get(`/resumen/periodo/${periodoId}`);

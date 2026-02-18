@@ -59,7 +59,7 @@ app.add_middleware(
 # --------------------------------------------------
 # STATIC
 # --------------------------------------------------
-app.mount("/public", StaticFiles(directory="public"), name="public")
+# app.mount("/public", StaticFiles(directory="public"), name="public")
 
 # --------------------------------------------------
 # ROUTERS

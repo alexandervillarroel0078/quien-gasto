@@ -1,3 +1,4 @@
+// frontend/src/modulos/resumen/pages/ResumenPeriodo.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -13,7 +14,9 @@ export default function ResumenPeriodo() {
   const { periodoId } = useParams();
 
   const [periodos, setPeriodos] = useState([]);
-  const [periodoActual, setPeriodoActual] = useState(periodoId || "");
+  const [periodoActual, setPeriodoActual] = useState(
+    periodoId ? Number(periodoId) : ""
+  );
   const [items, setItems] = useState([]);
 
   // ======================
@@ -22,11 +25,14 @@ export default function ResumenPeriodo() {
   useEffect(() => {
     const cargarPeriodos = async () => {
       const res = await listarPeriodos(1, 100);
-      setPeriodos(res.data.items || []);
-      if (!periodoActual && res.data.items?.length) {
-        setPeriodoActual(res.data.items[0].id);
+      const lista = res.data.items || [];
+      setPeriodos(lista);
+
+      if (!periodoActual && lista.length) {
+        setPeriodoActual(lista[0].id);
       }
     };
+
     cargarPeriodos();
   }, []);
 
@@ -38,7 +44,7 @@ export default function ResumenPeriodo() {
 
     const cargarResumen = async () => {
       const res = await resumenPorPeriodo(periodoActual);
-      setItems(res.data);
+      setItems(res.data || []);
     };
 
     cargarResumen();
@@ -49,19 +55,19 @@ export default function ResumenPeriodo() {
   // ======================
   const columns = [
     {
-      key: "persona",
+      key: "nombre",
       label: "Persona",
       render: r => r.nombre,
     },
     {
-      key: "aportes",
+      key: "total_aportes",
       label: "Aportes",
-      render: r => `Bs ${r.total_aportes}`,
+      render: r => `Bs ${r.total_aportes.toFixed(2)}`,
     },
     {
-      key: "gastos",
+      key: "total_gastos",
       label: "Gastos",
-      render: r => `Bs ${r.total_gastos}`,
+      render: r => `Bs ${r.total_gastos.toFixed(2)}`,
     },
     {
       key: "balance",
@@ -69,11 +75,11 @@ export default function ResumenPeriodo() {
       render: r => (
         <span
           style={{
-            color: r.balance < 0 ? "red" : "green",
+            color: r.balance < 0 ? "#c0392b" : "#27ae60",
             fontWeight: 600,
           }}
         >
-          Bs {r.balance}
+          Bs {r.balance.toFixed(2)}
         </span>
       ),
     },
@@ -89,8 +95,8 @@ export default function ResumenPeriodo() {
         rightContent={
           <Select
             value={periodoActual}
-            onChange={e => setPeriodoActual(e.target.value)}
-            style={{ minWidth: 200 }}
+            onChange={e => setPeriodoActual(Number(e.target.value))}
+            style={{ minWidth: 220 }}
           >
             {periodos.map(p => (
               <option key={p.id} value={p.id}>
