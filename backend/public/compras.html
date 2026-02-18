@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Admin Compras</title>
+
+<style>
+body{font-family:Arial;background:#f5f6fa;padding:20px}
+table{width:100%;background:#fff;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ddd;padding:6px}
+th{background:#222;color:#fff}
+input,select,button{padding:6px;margin:3px}
+#panel,#formCompra{display:none;background:#fff;padding:10px;border:1px solid #ddd;margin-top:10px}
+.error{color:red;margin-top:5px}
+.detalles{background:#fafafa;padding:6px;margin-top:6px;border:1px dashed #ccc}
+</style>
+</head>
+<body>
+
+<h2>Panel ADMIN - Compras</h2>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginBox">
+  <input id="correo" placeholder="Correo">
+  <input id="password" type="password" placeholder="Contraseña">
+  <button onclick="login()">Entrar</button>
+  <div class="error" id="loginMsg"></div>
+</div>
+
+<!-- ================= PANEL ================= -->
+<div id="panel">
+
+<button onclick="nuevaCompra()">➕ Nueva compra</button>
+
+<!-- ================= FORM COMPRA ================= -->
+<div id="formCompra">
+
+<select id="proveedor" onchange="mostrarNIT()"></select>
+<input id="nit" placeholder="NIT proveedor" readonly>
+<input id="numero_documento" placeholder="N° Documento / Comprobante">
+
+
+<hr>
+
+<h4>Detalle</h4>
+
+<select id="producto"></select>
+<input id="cantidad" type="number" step="0.01" placeholder="Cantidad">
+<input id="precio" type="number" step="0.01" placeholder="Precio compra">
+
+<button onclick="agregarDetalle()">➕ Agregar</button>
+
+<div id="listaDetalles"></div>
+
+<hr>
+
+<button onclick="guardarCompra()">💾 Guardar compra</button>
+<button onclick="cancelar()">❌ Cancelar</button>
+</div>
+
+<!-- ================= TABLA ================= -->
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Proveedor</th>
+<th>Documento</th>
+
+<th>Fecha</th>
+<th>Total</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+
+</div>
+
+
+<script>
+const API="http://localhost:8000"
+const v=id=>document.getElementById(id).value
+let proveedores = []
+let token=null
+let usuario_id=null
+let detalles=[]
+
+// ================= LOGIN =================
+async function login(){
+  const r = await fetch(`${API}/auth/login`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      correo:v("correo"),
+      password:v("password")
+    })
+  })
+  const d = await r.json()
+
+  if(!r.ok){
+    loginMsg.textContent = d.detail || "Error"
+    return
+  }
+
+  token = d.access_token
+  usuario_id = d.usuario_id
+
+  loginBox.style.display="none"
+  panel.style.display="block"
+
+  cargarProveedores()
+  cargarProductos()
+  cargarCompras()
+}
+
+// ================= CARGAS =================
+async function cargarProveedores(){
+  const r = await fetch(`${API}/proveedores/`,{
+    headers:{Authorization:`Bearer ${token}`}
+  })
+  proveedores = await r.json()
+
+  proveedor.innerHTML = proveedores
+    .map(p => `<option value="${p.id}">${p.nombre}</option>`)
+    .join("")
+
+  // autollenar el primero
+  mostrarNIT()
+}
+
+
+async function cargarProductos(){
+  const r=await fetch(`${API}/productos/`,{
+    headers:{Authorization:`Bearer ${token}`}
+  })
+  const d=await r.json()
+  producto.innerHTML=d.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join("")
+}
+
+async function cargarCompras(){
+  const r=await fetch(`${API}/compras/`,{
+    headers:{Authorization:`Bearer ${token}`}
+  })
+  const d=await r.json()
+tabla.innerHTML=d.map(c=>`
+  <tr style="${c.estado === 'ANULADA' ? 'opacity:0.5' : ''}">
+    <td>${c.id}</td>
+    <td>${c.proveedor.nombre}</td>
+    <td>${c.numero_documento||""}</td>
+    <td>${new Date(c.fecha).toLocaleString()}</td>
+    <td>${c.total}</td>
+    <td>
+      <button onclick="ver(${c.id})">👁</button>
+      ${c.estado === "CONFIRMADA"
+        ? `<button onclick="anular(${c.id})">🗑</button>`
+        : ""}
+    </td>
+  </tr>
+`).join("")
+
+}
+
+// ================= FORM =================
+function nuevaCompra(){
+  detalles=[]
+  listaDetalles.innerHTML=""
+  formCompra.style.display="block"
+}
+
+function cancelar(){
+  detalles=[]
+  formCompra.style.display="none"
+}
+
+function agregarDetalle(){
+  const d={
+    producto_id:+v("producto"),
+    nombre:producto.options[producto.selectedIndex].text,
+    cantidad:+v("cantidad"),
+    precio:+v("precio")
+  }
+  detalles.push(d)
+  renderDetalles()
+}
+
+function renderDetalles(){
+  listaDetalles.innerHTML=detalles.map((d,i)=>`
+    <div class="detalles">
+      ${d.nombre} | ${d.cantidad} x ${d.precio}
+      <button onclick="quitar(${i})">❌</button>
+    </div>
+  `).join("")
+}
+
+function quitar(i){
+  detalles.splice(i,1)
+  renderDetalles()
+}
+function mostrarNIT(){
+  const id = +v("proveedor")
+  const p = proveedores.find(x => x.id === id)
+  nit.value = p?.nit || ""
+}
+
+// ================= GUARDAR =================
+async function guardarCompra(){
+  if(!detalles.length){
+    alert("Agregue productos")
+    return
+  }
+
+  const payload={
+    proveedor_id:+v("proveedor"),
+    usuario_id,
+    numero_documento: v("numero_documento") || null,
+
+    detalles:detalles.map(d=>({
+      producto_id:d.producto_id,
+      cantidad:d.cantidad,
+      precio_compra:d.precio
+    }))
+  }
+
+  await fetch(`${API}/compras/`,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:`Bearer ${token}`
+    },
+    body:JSON.stringify(payload)
+  })
+
+  cancelar()
+  cargarCompras()
+}
+
+// ================= ACCIONES =================
+async function ver(id){
+  const r=await fetch(`${API}/compras/${id}`,{
+    headers:{Authorization:`Bearer ${token}`}
+  })
+  const c=await r.json()
+
+  alert(
+    "COMPRA #"+c.id+"\n"+
+    c.detalles.map(d=>`${d.producto.nombre} ${d.cantidad} x ${d.precio_compra}`).join("\n")
+  )
+}
+
+async function anular(id){
+  if(!confirm("¿Anular compra?"))return
+  await fetch(`${API}/compras/${id}`,{
+    method:"DELETE",
+    headers:{Authorization:`Bearer ${token}`}
+  })
+  cargarCompras()
+}
+</script>
+
+</body>
+</html>

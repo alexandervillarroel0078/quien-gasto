@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #111217;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .login-box {
+            width: 320px;
+            background: #1a1c22;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.4);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background: #ff6a2c;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #ff824f;
+        }
+
+        .msg {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #ff6a6a;
+        }
+
+        .ok {
+            color: #7CFC98;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <h2>Iniciar sesión</h2>
+
+        <input type="email" id="correo" placeholder="Correo" />
+        <input type="password" id="password" placeholder="Contraseña" />
+
+        <button onclick="login()">Entrar</button>
+
+        <div id="msg" class="msg"></div>
+    </div>
+
+<script>
+async function login() {
+    const correo = document.getElementById("correo").value;
+    const password = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
+
+    msg.textContent = "Procesando...";
+    msg.className = "msg";
+
+    try {
+        const response = await fetch("http://localhost:8000/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                correo: correo,
+                password: password
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            msg.textContent = data.detail || "Error al iniciar sesión";
+            msg.classList.add("error");
+            return;
+        }
+
+        // Guardar token y datos
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("rol", data.rol);
+        localStorage.setItem("usuario", data.nombre);
+
+        msg.textContent = "Bienvenido " + data.nombre + " 👋";
+        msg.classList.add("ok");
+
+        console.log("TOKEN:", data.access_token);
+        console.log("ROL:", data.rol);
+
+        // 👉 redirección según rol (opcional)
+        // setTimeout(() => {
+        //     if (data.rol === "ADMIN") {
+        //         window.location.href = "admin.html";
+        //     } else {
+        //         window.location.href = "ventas.html";
+        //     }
+        // }, 800);
+
+    } catch (err) {
+        msg.textContent = "No se pudo conectar con el servidor";
+        msg.classList.add("error");
+    }
+}
+</script>
+
+</body>
+</html>

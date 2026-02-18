@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Admin Ventas</title>
+
+<style>
+body{font-family:Arial;background:#f5f6fa;padding:20px}
+table{width:100%;background:#fff;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ddd;padding:6px}
+th{background:#222;color:#fff}
+input,select,button{padding:6px;margin:3px}
+#panel,#formVenta{display:none;background:#fff;padding:10px;border:1px solid #ddd;margin-top:10px}
+.detalle{background:#fafafa;padding:6px;margin-top:6px;border:1px dashed #ccc}
+.estado-PENDIENTE{color:#b58900;font-weight:bold}
+.estado-CONFIRMADA{color:#2aa198;font-weight:bold}
+.estado-ANULADA{color:#dc322f;font-weight:bold}
+</style>
+</head>
+<body>
+
+<h2>Panel ADMIN - Ventas</h2>
+
+<!-- LOGIN -->
+<div id="loginBox">
+  <input id="correo" placeholder="Correo">
+  <input id="password" type="password" placeholder="Contraseña">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<div id="panel">
+
+<button onclick="nuevaVenta()">➕ Nueva venta</button>
+
+<!-- FORM VENTA -->
+<div id="formVenta">
+  <select id="cliente"></select>
+  <select id="metodo_pago">
+    <option value="EFECTIVO">EFECTIVO</option>
+    <option value="TARJETA">TARJETA</option>
+    <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+    <option value="QR">QR</option>
+  </select>
+  <input id="numero_tarjeta" placeholder="N° tarjeta (opcional)">
+
+  <hr>
+
+  <h4>Detalle</h4>
+  <select id="producto"></select>
+  <input id="cantidad" type="number" step="0.01" placeholder="Cantidad">
+  <input id="precio" type="number" step="0.01" placeholder="Precio">
+  <input id="descuento" type="number" step="0.01" placeholder="Descuento">
+
+  <button onclick="agregarDetalle()">➕ Agregar</button>
+
+  <div id="listaDetalles"></div>
+
+  <hr>
+  <button onclick="guardarVenta()">💾 Guardar venta</button>
+  <button onclick="cancelar()">❌ Cancelar</button>
+</div>
+
+<!-- TABLA -->
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Código</th>
+<th>Cliente</th>
+<th>Fecha</th>
+<th>Total</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+
+</div>
+
+<script>
+const API="http://localhost:8000"
+let token=null
+let usuario_id=null
+let detalles=[]
+
+const v=id=>document.getElementById(id).value
+
+async function login(){
+  const r=await fetch(`${API}/auth/login`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({correo:v("correo"),password:v("password")})
+  })
+  const d=await r.json()
+  token=d.access_token
+  usuario_id=d.usuario_id
+  loginBox.style.display="none"
+  panel.style.display="block"
+  cargarClientes()
+  cargarProductos()
+  cargarVentas()
+}
+
+async function cargarClientes(){
+  const r=await fetch(`${API}/clientes/`,{headers:{Authorization:`Bearer ${token}`}})
+  const d=await r.json()
+  cliente.innerHTML=d.map(c=>`<option value="${c.id}">${c.nombre_razon_social}</option>`).join("")
+}
+
+async function cargarProductos(){
+  const r=await fetch(`${API}/productos/`,{headers:{Authorization:`Bearer ${token}`}})
+  const d=await r.json()
+  producto.innerHTML=d.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join("")
+}
+
+async function cargarVentas(){
+  const r=await fetch(`${API}/ventas/`,{headers:{Authorization:`Bearer ${token}`}})
+  const d=await r.json()
+  tabla.innerHTML=d.map(v=>`
+    <tr style="${v.estado==='ANULADA'?'opacity:.5':''}">
+      <td>${v.id}</td>
+      <td>${v.codigo}</td>
+      <td>${v.cliente.nombre_razon_social}</td>
+      <td>${new Date(v.fecha).toLocaleString()}</td>
+      <td>${v.total}</td>
+      <td class="estado-${v.estado}">${v.estado}</td>
+      <td>
+        ${v.estado==="PENDIENTE"?`<button onclick="confirmar(${v.id})">✔</button>`:""}
+        ${v.estado!=="ANULADA"?`<button onclick="anular(${v.id})">🗑</button>`:""}
+      </td>
+    </tr>
+  `).join("")
+}
+
+function nuevaVenta(){
+  detalles=[]
+  listaDetalles.innerHTML=""
+  formVenta.style.display="block"
+}
+
+function cancelar(){
+  detalles=[]
+  formVenta.style.display="none"
+}
+
+function agregarDetalle(){
+  const cant=+v("cantidad")
+  const prec=+v("precio")
+  if(cant<=0||prec<=0){alert("Cantidad y precio inválidos");return}
+  detalles.push({
+    producto_id:+v("producto"),
+    cantidad:cant,
+    precio_unitario:prec,
+    descuento:+v("descuento")||0
+  })
+  renderDetalles()
+}
+
+function renderDetalles(){
+  listaDetalles.innerHTML=detalles.map((d,i)=>`
+    <div class="detalle">
+      Prod ${d.producto_id} | ${d.cantidad} x ${d.precio_unitario}
+      <button onclick="detalles.splice(${i},1);renderDetalles()">❌</button>
+    </div>
+  `).join("")
+}
+
+async function guardarVenta(){
+  if(!detalles.length){alert("Agregue productos");return}
+  await fetch(`${API}/ventas/`,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:`Bearer ${token}`
+    },
+    body:JSON.stringify({
+      cliente_id:+v("cliente"),
+      usuario_id,
+      metodo_pago:v("metodo_pago"),
+      numero_tarjeta:v("numero_tarjeta")||null,
+      detalles
+    })
+  })
+  cancelar()
+  cargarVentas()
+}
+
+async function confirmar(id){
+  if(!confirm("¿Confirmar venta?"))return
+  await fetch(`${API}/ventas/${id}/confirmar`,{
+    method:"POST",
+    headers:{Authorization:`Bearer ${token}`}
+  })
+  cargarVentas()
+}
+
+async function anular(id){
+  if(!confirm("¿Anular venta?"))return
+  await fetch(`${API}/ventas/${id}/anular`,{
+    method:"POST",
+    headers:{Authorization:`Bearer ${token}`}
+  })
+  cargarVentas()
+}
+</script>
+
+</body>
+</html>

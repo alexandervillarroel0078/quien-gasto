@@ -1,0 +1,23 @@
+# Entornos virtuales
+venv/
+*/venv/
+
+# Entornos
+
+*.env
+
+# Bot
+bot/__pycache__/
+bot/*.pyc
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+
+
+# Python cache
+__pycache__/
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
