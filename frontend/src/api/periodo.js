@@ -20,7 +20,22 @@ export const crearPeriodo = data =>
   api.post("/periodos/", data);
 
 // =======================
-// CERRAR
+// ACTUALIZAR (PATCH)
 // =======================
-export const cerrarPeriodo = id =>
-  api.post(`/periodos/${id}/cerrar`);
+export const actualizarPeriodo = (id, data) =>
+  api.patch(`/periodos/${id}`, data);
+
+// =======================
+// CERRAR / REABRIR
+// =======================
+export const cerrarPeriodo = (id) =>
+  api.patch(`/periodos/${id}/cerrar`);
+
+export const reabrirPeriodo = (id) =>
+  api.patch(`/periodos/${id}/reabrir`);
+
+// =======================
+// RESUMEN DEL PERIODO
+// =======================
+export const resumenPeriodo = (id) =>
+  api.get(`/periodos/${id}/resumen`);

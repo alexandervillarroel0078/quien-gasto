@@ -4,7 +4,7 @@ import ResumenPeriodo from "../modulos/resumen/page/ResumenPeriodo";
 
 export default (
   <>
-    {/* Vista base (desde menú) */}
     <Route path="/resumen" element={<ResumenPeriodo />} />
+    <Route path="/resumen/periodo/:periodoId" element={<ResumenPeriodo />} />
   </>
 );

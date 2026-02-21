@@ -13,7 +13,7 @@ import {
   listarAportes,
   crearAporte,
   actualizarAporte,
-  eliminarAporte,
+  anularAporte,
 } from "../../../api/aporte";
 
 import useAuth from "../../../auth/useAuth";
@@ -84,9 +84,9 @@ export default function AportesList() {
     cargar(page);
   };
 
-  const eliminar = async (id) => {
-    if (!window.confirm("¿Eliminar este aporte?")) return;
-    await eliminarAporte(id);
+  const anular = async (id) => {
+    if (!window.confirm("¿Anular este aporte?")) return;
+    await anularAporte(id);
     cargar(page);
   };
 
@@ -111,6 +111,11 @@ export default function AportesList() {
       render: a => `Bs ${a.monto}`,
     },
     { key: "nota", label: "Nota" },
+    {
+      key: "estado",
+      label: "Estado",
+      render: (a) => (a.estado === "ANULADO" ? "Anulado" : "Activo"),
+    },
   ];
 
   return (
@@ -139,7 +144,7 @@ export default function AportesList() {
                 </Button>
               }
               items={
-                esMio
+                esMio && a.estado !== "ANULADO"
                   ? [
                       {
                         label: "Editar",
@@ -147,10 +152,10 @@ export default function AportesList() {
                         onClick: () => editar(a),
                       },
                       {
-                        label: "Eliminar",
-                        icon: "🗑",
+                        label: "Anular",
+                        icon: "🚫",
                         danger: true,
-                        onClick: () => eliminar(a.id),
+                        onClick: () => anular(a.id),
                       },
                     ]
                   : []

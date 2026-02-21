@@ -7,7 +7,10 @@ class PeriodoCreate(BaseModel):
     fecha_fin: date
 
 class PeriodoUpdate(BaseModel):
-    cerrado: bool
+    nombre: str | None = None
+    fecha_inicio: date | None = None
+    fecha_fin: date | None = None
+    cerrado: bool | None = None
 
 class PeriodoResponse(BaseModel):
     id: int

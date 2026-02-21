@@ -1,6 +1,6 @@
 # backend/routers/gastos.py
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 
 from database import get_db
@@ -22,7 +22,7 @@ def listar_gastos(
     periodo_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Gasto).join(Persona)
+    query = db.query(Gasto).options(joinedload(Gasto.categoria)).join(Persona)
 
     if q and q.strip():
         query = query.filter(
@@ -94,7 +94,7 @@ def obtener_gasto(
     id: int,
     db: Session = Depends(get_db),
 ):
-    gasto = db.get(Gasto, id)
+    gasto = db.query(Gasto).options(joinedload(Gasto.categoria)).filter(Gasto.id == id).first()
     if not gasto:
         raise HTTPException(404, "Gasto no encontrado")
     return gasto
@@ -136,29 +136,27 @@ def actualizar(
     return gasto
 
 # =========================
-# ELIMINAR
+# ANULAR
 # =========================
-@router.delete("/{id}")
-def eliminar(
+@router.patch("/{id}/anular")
+def anular(
     id: int,
     db: Session = Depends(get_db),
     usuario: dict = Depends(get_current_user),
 ):
     gasto = db.get(Gasto, id)
-    if not gasto or gasto.usuario_login_id != usuario["id"]:
+    if not gasto:
+        raise HTTPException(404, "Gasto no encontrado")
+    if gasto.usuario_login_id != usuario["id"]:
         raise HTTPException(403, "No autorizado")
-
-    if gasto.periodo and gasto.periodo.cerrado:
-        raise HTTPException(400, "Periodo cerrado")
-
-    db.delete(gasto)
-
+    if gasto.estado == "ANULADO":
+        return {"ok": True, "mensaje": "Gasto ya estaba anulado"}
+    gasto.estado = "ANULADO"
     db.add(Bitacora(
         entidad="Gasto",
         entidad_id=id,
-        accion="DELETE",
+        accion="ANULAR",
         usuario_id=usuario["id"],
     ))
     db.commit()
-
     return {"ok": True}

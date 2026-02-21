@@ -107,9 +107,9 @@ def actualizar(
 
 
 # =========================
-# DESACTIVAR (DELETE)
+# DESACTIVAR
 # =========================
-@router.delete("/{id}")
+@router.patch("/{id}/desactivar")
 def desactivar(
     id: int,
     db: Session = Depends(get_db),
@@ -129,7 +129,7 @@ def desactivar(
 # =========================
 # ACTIVAR
 # =========================
-@router.post("/{id}/activar")
+@router.patch("/{id}/activar")
 def activar(
     id: int,
     db: Session = Depends(get_db),

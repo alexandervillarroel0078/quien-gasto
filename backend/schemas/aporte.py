@@ -33,6 +33,7 @@ class AporteResponse(BaseModel):
     fecha: date
     nota: Optional[str]
     periodo_id: Optional[int]
+    estado: Optional[str] = None
 
     class Config:
         from_attributes = True

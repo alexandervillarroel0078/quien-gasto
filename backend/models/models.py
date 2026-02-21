@@ -11,12 +11,30 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
-    Numeric
+    Numeric,
+    Enum
 )
+from sqlalchemy import  event
+
 from sqlalchemy.orm import relationship
 from datetime import datetime
-
+from sqlalchemy import CheckConstraint
 from database import Base
+
+EstadoMovimientoEnum = Enum(
+    "ACTIVO",
+    "ANULADO",
+    name="estado_movimiento"
+)
+
+AccionBitacoraEnum = Enum(
+    "CREATE",
+    "UPDATE",
+    "ANULAR",
+    "CERRAR",
+    "REABRIR",
+    name="accion_bitacora"
+)
 
 class Bitacora(Base):
     __tablename__ = "bitacora"
@@ -26,7 +44,7 @@ class Bitacora(Base):
     entidad = Column(String(50), nullable=False)
     entidad_id = Column(Integer, nullable=False)
 
-    accion = Column(String(20), nullable=False)  
+    accion = Column(AccionBitacoraEnum, nullable=False)
     # CREATE, UPDATE, DELETE
 
     descripcion = Column(String(300), nullable=True)
@@ -67,21 +85,30 @@ class Aporte(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     persona_id = Column(Integer, ForeignKey("personas.id"), nullable=False)
-    usuario_login_id = Column(
-        Integer,
-        ForeignKey("usuarios_login.id"),
-        nullable=False
-    )
-
+    usuario_login_id = Column(Integer, ForeignKey("usuarios_login.id"), nullable=False)
     periodo_id = Column(Integer, ForeignKey("periodos.id"), nullable=True)
 
     monto = Column(Numeric(12, 2), nullable=False)
     fecha = Column(Date, nullable=False)
     nota = Column(String(200), nullable=True)
 
+    estado = Column(EstadoMovimientoEnum, default="ACTIVO", nullable=False)
+
     persona = relationship("Persona", back_populates="aportes")
     usuario = relationship("UsuarioLogin")
     periodo = relationship("Periodo", back_populates="aportes")
+    __table_args__ = (
+        CheckConstraint("monto > 0", name="ck_aporte_monto_positivo"),
+    )
+
+class CategoriaGasto(Base):
+    __tablename__ = "categorias_gasto"
+
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(100), unique=True, nullable=False)
+    activo = Column(Boolean, default=True)
+
+    gastos = relationship("Gasto", back_populates="categoria")
 
 class Gasto(Base):
     __tablename__ = "gastos"
@@ -93,18 +120,22 @@ class Gasto(Base):
     fecha = Column(Date, nullable=False)
 
     persona_id = Column(Integer, ForeignKey("personas.id"), nullable=False)
-    usuario_login_id = Column(
-        Integer,
-        ForeignKey("usuarios_login.id"),
-        nullable=False
-    )
-
+    usuario_login_id = Column(Integer, ForeignKey("usuarios_login.id"), nullable=False)
     periodo_id = Column(Integer, ForeignKey("periodos.id"), nullable=True)
+
+    categoria_id = Column(Integer, ForeignKey("categorias_gasto.id"), nullable=True)
+
+    estado = Column(EstadoMovimientoEnum, default="ACTIVO", nullable=False)
 
     persona = relationship("Persona", back_populates="gastos")
     usuario = relationship("UsuarioLogin")
     periodo = relationship("Periodo", back_populates="gastos")
 
+    categoria = relationship("CategoriaGasto", back_populates="gastos")
+
+    __table_args__ = (
+        CheckConstraint("monto > 0", name="ck_gasto_monto_positivo"),
+    )
 
 class Periodo(Base):
     __tablename__ = "periodos"
@@ -119,3 +150,10 @@ class Periodo(Base):
 
     aportes = relationship("Aporte", back_populates="periodo")
     gastos = relationship("Gasto", back_populates="periodo")
+
+    __table_args__ = (
+        CheckConstraint(
+            "fecha_inicio <= fecha_fin",
+            name="ck_periodo_fechas_validas"
+        ),
+    )

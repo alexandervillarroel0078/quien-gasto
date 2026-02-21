@@ -19,6 +19,7 @@ class GastoCreate(BaseModel):
     monto: Decimal
     fecha: date
     periodo_id: Optional[int] = None
+    categoria_id: Optional[int] = None
 
 
 # =========================
@@ -29,6 +30,15 @@ class GastoUpdate(BaseModel):
     monto: Optional[Decimal] = None
     fecha: Optional[date] = None
     periodo_id: Optional[int] = None
+    categoria_id: Optional[int] = None
+
+
+class CategoriaGastoMini(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
 
 
 # =========================
@@ -42,6 +52,9 @@ class GastoResponse(BaseModel):
     monto: Decimal
     fecha: date
     periodo_id: Optional[int]
+    categoria_id: Optional[int] = None
+    categoria: Optional[CategoriaGastoMini] = None
+    estado: Optional[str] = None
 
     class Config:
         from_attributes = True

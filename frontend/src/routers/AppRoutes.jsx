@@ -5,13 +5,14 @@ import Login from "../pages/Login";
 import Home from "../pages/Home";
 import NoAutorizado from "../auth/NoAutorizado";
 
-// 👇 ROUTES NUEVOS (familia)
 import AporteRoutes from "./aporte.routes";
 import GastoRoutes from "./gasto.routes";
 import PeriodoRoutes from "./periodo.routes";
 import PersonaRoutes from "./persona.routes";
 import ResumenRoutes from "./resumen.routes";
 import BitacoraRoutes from "./bitacora.routes";
+import CategoriasGastoRoutes from "./categoriasGasto.routes";
+import ReportesRoutes from "./reportes.routes";
 
 export default function AppRoutes() {
   return (
@@ -32,7 +33,8 @@ export default function AppRoutes() {
           {PersonaRoutes}
           {ResumenRoutes}
           {BitacoraRoutes}
-
+          {CategoriasGastoRoutes}
+          {ReportesRoutes}
         </Route>
       </Routes>
     </BrowserRouter>

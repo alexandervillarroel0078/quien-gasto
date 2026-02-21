@@ -87,28 +87,29 @@ def crear(
     return aporte
 
 # =========================
-# ELIMINAR
+# ANULAR
 # =========================
-@router.delete("/{id}")
-def eliminar(
+@router.patch("/{id}/anular")
+def anular(
     id: int,
     db: Session = Depends(get_db),
     usuario: dict = Depends(get_current_user),
 ):
     aporte = db.get(Aporte, id)
-    if not aporte or aporte.usuario_login_id != usuario["id"]:
+    if not aporte:
+        raise HTTPException(404, "Aporte no encontrado")
+    if aporte.usuario_login_id != usuario["id"]:
         raise HTTPException(403, "No autorizado")
-
-    db.delete(aporte)
-
+    if aporte.estado == "ANULADO":
+        return {"ok": True, "mensaje": "Aporte ya estaba anulado"}
+    aporte.estado = "ANULADO"
     db.add(Bitacora(
         entidad="Aporte",
         entidad_id=id,
-        accion="DELETE",
+        accion="ANULAR",
         usuario_id=usuario["id"],
     ))
     db.commit()
-
     return {"ok": True}
 
 @router.put("/{id}", response_model=AporteResponse)

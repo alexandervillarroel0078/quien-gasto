@@ -14,7 +14,7 @@ import {
   obtenerGasto,
   crearGasto,
   actualizarGasto,
-  eliminarGasto,
+  anularGasto,
 } from "../../../api/gasto";
 
 import useAuth from "../../../auth/useAuth";
@@ -93,9 +93,9 @@ export default function GastosList() {
     cargar(page);
   };
 
-  const eliminar = async id => {
-    if (!window.confirm("¿Eliminar este gasto?")) return;
-    await eliminarGasto(id);
+  const anular = async (id) => {
+    if (!window.confirm("¿Anular este gasto?")) return;
+    await anularGasto(id);
     cargar(page);
   };
 
@@ -126,6 +126,11 @@ export default function GastosList() {
       label: "Monto",
       render: g => `Bs ${g.monto}`,
     },
+    {
+      key: "estado",
+      label: "Estado",
+      render: g => (g.estado === "ANULADO" ? "Anulado" : "Activo"),
+    },
   ];
 
   // ======================
@@ -147,9 +152,7 @@ export default function GastosList() {
         data={items}
         onRowClick={g => ver(g.id)}
         renderActions={g => {
-          const esMio = g.usuario_login_id === user.usuario_id;
-
-
+          const esMio = g.usuario_login_id === user?.usuario_id;
           return (
             <ActionMenu
               primaryAction={
@@ -158,7 +161,7 @@ export default function GastosList() {
                 </Button>
               }
               items={[
-                ...(esMio
+                ...(esMio && g.estado !== "ANULADO"
                   ? [
                       {
                         label: "Editar",
@@ -166,10 +169,10 @@ export default function GastosList() {
                         onClick: () => editar(g.id),
                       },
                       {
-                        label: "Eliminar",
-                        icon: "🗑",
+                        label: "Anular",
+                        icon: "🚫",
                         danger: true,
-                        onClick: () => eliminar(g.id),
+                        onClick: () => anular(g.id),
                       },
                     ]
                   : []),

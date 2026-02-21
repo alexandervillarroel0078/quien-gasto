@@ -11,10 +11,11 @@ const NAV_MODULES = {
   movimientos: {
     title: "Movimientos",
     icon: "💸",
-    routes: ["/aportes", "/gastos"],
+    routes: ["/aportes", "/gastos", "/categorias-gasto"],
     items: [
       { label: "Aportes", path: "/aportes", icon: "💰" },
       { label: "Gastos", path: "/gastos", icon: "🧾" },
+      { label: "Categorías de gasto", path: "/categorias-gasto", icon: "📁" },
     ],
   },
 
@@ -27,16 +28,12 @@ const NAV_MODULES = {
     ],
   },
 
- resumen: {
+  resumen: {
     title: "Resumen",
     icon: "📊",
     routes: ["/resumen"],
     items: [
-      {
-        label: "Resumen por periodo",
-        path: "/resumen",      // ✅ CORRECTO
-        icon: "📈",
-      },
+      { label: "Resumen por periodo", path: "/resumen", icon: "📈" },
     ],
   },
 
@@ -46,6 +43,15 @@ const NAV_MODULES = {
     routes: ["/personas"],
     items: [
       { label: "Personas", path: "/personas", icon: "👤" },
+    ],
+  },
+
+  reportes: {
+    title: "Reportes",
+    icon: "📈",
+    routes: ["/reportes"],
+    items: [
+      { label: "Reportes", path: "/reportes", icon: "📊" },
     ],
   },
 
@@ -96,7 +102,7 @@ export default function Navbar() {
       {/* MARCA */}
       <div style={styles.brand}>
         <div style={styles.brandDot} />
-        <span>Ferretería</span>
+        <span>Quién Gastó</span>
       </div>
 
       {/* NAVEGACIÓN */}
@@ -124,9 +130,6 @@ export default function Navbar() {
           );
         })}
 
-        <Link to="/reportes" style={{ ...styles.link, ...isActive("/reportes") }}>
-          📊 Reportes
-        </Link>
       </nav>
 
       {/* USUARIO */}

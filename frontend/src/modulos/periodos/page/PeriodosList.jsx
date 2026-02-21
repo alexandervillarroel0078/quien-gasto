@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import Layout from "../../../layouts/Layout";
 import Button from "../../../shared/components/Button";
@@ -11,24 +12,24 @@ import Pagination from "../../../shared/components/Pagination";
 import PeriodoForm from "../components/PeriodoForm";
 import {
   listarPeriodos,
+  obtenerPeriodo,
   crearPeriodo,
+  actualizarPeriodo,
   cerrarPeriodo,
+  reabrirPeriodo,
 } from "../../../api/periodo";
 
 export default function PeriodosList() {
-  // ======================
-  // Estados
-  // ======================
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [actual, setActual] = useState(null);
+  const [modo, setModo] = useState("crear"); // crear | editar
 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const size = 20;
 
-  // ======================
-  // Cargar
-  // ======================
   const cargar = useCallback(
     async (p = page) => {
       const res = await listarPeriodos(p, size);
@@ -43,22 +44,39 @@ export default function PeriodosList() {
     cargar(page);
   }, [page, cargar]);
 
-  // ======================
-  // Acciones
-  // ======================
   const nuevo = () => {
+    setActual(null);
+    setModo("crear");
     setMostrarForm(true);
   };
 
-  const guardar = async data => {
-    await crearPeriodo(data);
-    setMostrarForm(false);
-    cargar(1);
+  const editar = async (p) => {
+    const res = await obtenerPeriodo(p.id);
+    setActual(res.data);
+    setModo("editar");
+    setMostrarForm(true);
   };
 
-  const cerrar = async id => {
+  const guardar = async (data) => {
+    if (modo === "crear") {
+      await crearPeriodo(data);
+    } else {
+      await actualizarPeriodo(actual.id, data);
+    }
+    setMostrarForm(false);
+    setActual(null);
+    cargar(modo === "crear" ? 1 : page);
+  };
+
+  const cerrar = async (id) => {
     if (!window.confirm("¿Cerrar este periodo?")) return;
     await cerrarPeriodo(id);
+    cargar(page);
+  };
+
+  const reabrir = async (id) => {
+    if (!window.confirm("¿Reabrir este periodo?")) return;
+    await reabrirPeriodo(id);
     cargar(page);
   };
 
@@ -95,20 +113,34 @@ export default function PeriodosList() {
       <Table
         columns={columns}
         data={items}
-        renderActions={p => (
+        renderActions={(p) => (
           <ActionMenu
             primaryAction={
-              <Button size="sm" onClick={() => cerrar(p.id)} disabled={p.cerrado}>
-                Cerrar
+              <Button
+                size="sm"
+                onClick={() => (p.cerrado ? reabrir(p.id) : cerrar(p.id))}
+              >
+                {p.cerrado ? "Reabrir" : "Cerrar"}
               </Button>
             }
             items={[
               {
-                label: "Cerrar periodo",
-                icon: "🔒",
-                danger: true,
+                label: "Ver resumen",
+                icon: "📊",
+                onClick: () => navigate(`/resumen/periodo/${p.id}`),
+              },
+              {
+                label: "Editar",
+                icon: "✏️",
                 disabled: p.cerrado,
-                onClick: () => cerrar(p.id),
+                onClick: () => editar(p),
+              },
+              {
+                label: p.cerrado ? "Reabrir periodo" : "Cerrar periodo",
+                icon: p.cerrado ? "🔓" : "🔒",
+                danger: !p.cerrado,
+                disabled: false,
+                onClick: () => (p.cerrado ? reabrir(p.id) : cerrar(p.id)),
               },
             ]}
           />
@@ -125,12 +157,13 @@ export default function PeriodosList() {
       <Drawer
         open={mostrarForm}
         onClose={() => setMostrarForm(false)}
-        title="➕ Nuevo Periodo"
+        title={modo === "crear" ? "➕ Nuevo Periodo" : "✏️ Editar Periodo"}
         width={360}
       >
         <PeriodoForm
+          initialData={actual}
           onSubmit={guardar}
-          textoBoton="Crear periodo"
+          textoBoton={modo === "crear" ? "Crear periodo" : "Actualizar"}
         />
       </Drawer>
     </Layout>

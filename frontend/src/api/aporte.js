@@ -20,7 +20,7 @@ export const actualizarAporte = (id, data) =>
   api.put(`/aportes/${id}`, data);
 
 // =======================
-// ELIMINAR
+// ANULAR
 // =======================
-export const eliminarAporte = (id) =>
-  api.delete(`/aportes/${id}`);
+export const anularAporte = (id) =>
+  api.patch(`/aportes/${id}/anular`);

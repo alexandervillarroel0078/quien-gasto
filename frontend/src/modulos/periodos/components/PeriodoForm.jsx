@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Button from "../../../shared/components/Button";
 import FormCard from "../../../shared/components/form/FormCard";
@@ -6,10 +6,17 @@ import FormField from "../../../shared/components/form/FormField";
 import Input from "../../../shared/components/form/Input";
 import FormLayout from "../../../shared/components/form/FormLayout";
 
-export default function PeriodoForm({ onSubmit, textoBoton }) {
+export default function PeriodoForm({ initialData = null, onSubmit, textoBoton }) {
   const [nombre, setNombre] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
+
+  useEffect(() => {
+    if (!initialData) return;
+    setNombre(initialData.nombre || "");
+    setFechaInicio(initialData.fecha_inicio || "");
+    setFechaFin(initialData.fecha_fin || "");
+  }, [initialData]);
 
   // ======================
   // Submit

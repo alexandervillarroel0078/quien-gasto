@@ -13,8 +13,8 @@ export const crearPersona = data =>
 export const editarPersona = (id, data) =>
   api.put(`/personas/${id}`, data);
 
-export const desactivarPersona = id =>
-  api.delete(`/personas/${id}`);
+export const desactivarPersona = (id) =>
+  api.patch(`/personas/${id}/desactivar`);
 
-export const activarPersona = id =>
-  api.post(`/personas/${id}/activar`);
+export const activarPersona = (id) =>
+  api.patch(`/personas/${id}/activar`);
