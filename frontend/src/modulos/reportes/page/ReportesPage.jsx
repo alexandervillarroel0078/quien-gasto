@@ -69,22 +69,32 @@ export default function ReportesPage() {
 
   return (
     <Layout>
+     <Select
+  value={periodoId}
+  onChange={(e) => setPeriodoId(e.target.value)}
+  style={{
+    minWidth: 220,
+    height: 36,
+    padding: "6px 12px",
+    borderRadius: 8,
+    border: "1px solid #2b2d33",
+    background: "#111217",
+    color: "#ffffff",
+    fontWeight: 500,
+    cursor: "pointer",
+  }}
+>
+  <option value="">Todos los periodos</option>
+  {periodos.map((p) => (
+    <option key={p.id} value={p.id}>
+      {p.nombre}
+    </option>
+  ))}
+</Select>
+
       <PageHeader
         title="📊 Reportes"
-        rightContent={
-          <Select
-            value={periodoId}
-            onChange={(e) => setPeriodoId(e.target.value)}
-            style={{ minWidth: 220 }}
-          >
-            <option value="">Todos los periodos</option>
-            {periodos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </Select>
-        }
+
       />
 
       {balance && (

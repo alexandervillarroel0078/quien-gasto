@@ -6,3 +6,9 @@ import api from "./api";
 // =======================
 export const resumenPorPeriodo = (periodoId) =>
   api.get(`/resumen/periodo/${periodoId}`);
+
+// =======================
+// RESUMEN GENERAL (NUEVO)
+// =======================
+export const resumenGeneral = () =>
+  api.get("/resumen/general");

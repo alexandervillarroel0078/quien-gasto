@@ -80,3 +80,60 @@ def resumen_por_periodo(
         )
         for r in rows
     ]
+
+
+
+# =====================================================
+# RESUMEN GENERAL (NUEVO)
+# =====================================================
+@router.get(
+    "/general",
+    response_model=list[ResumenPersonaResponse]
+)
+def resumen_general(
+    db: Session = Depends(get_db),
+):
+    aportes_sq = (
+        db.query(
+            Aporte.persona_id.label("persona_id"),
+            func.coalesce(func.sum(Aporte.monto), 0).label("total_aportes")
+        )
+        .filter(Aporte.estado == "ACTIVO")
+        .group_by(Aporte.persona_id)
+        .subquery()
+    )
+
+    gastos_sq = (
+        db.query(
+            Gasto.persona_id.label("persona_id"),
+            func.coalesce(func.sum(Gasto.monto), 0).label("total_gastos")
+        )
+        .filter(Gasto.estado == "ACTIVO")
+        .group_by(Gasto.persona_id)
+        .subquery()
+    )
+
+    rows = (
+        db.query(
+            Persona.id.label("persona_id"),
+            Persona.nombre,
+            func.coalesce(aportes_sq.c.total_aportes, 0).label("total_aportes"),
+            func.coalesce(gastos_sq.c.total_gastos, 0).label("total_gastos"),
+        )
+        .outerjoin(aportes_sq, aportes_sq.c.persona_id == Persona.id)
+        .outerjoin(gastos_sq, gastos_sq.c.persona_id == Persona.id)
+        .filter(Persona.activo == True)
+        .order_by(Persona.nombre.asc())
+        .all()
+    )
+
+    return [
+        ResumenPersonaResponse(
+            persona_id=r.persona_id,
+            nombre=r.nombre,
+            total_aportes=float(r.total_aportes),
+            total_gastos=float(r.total_gastos),
+            balance=float(r.total_aportes - r.total_gastos),
+        )
+        for r in rows
+    ]

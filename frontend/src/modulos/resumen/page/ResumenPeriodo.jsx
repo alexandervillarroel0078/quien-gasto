@@ -1,3 +1,4 @@
+//src/modulos/resumen/page/ResumenPeriodo.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -7,7 +8,7 @@ import PageHeader from "../../../shared/components/PageHeader";
 import Select from "../../../shared/components/form/Select";
 
 import { listarPeriodos } from "../../../api/periodo";
-import { resumenPorPeriodo } from "../../../api/resumen";
+import { resumenPorPeriodo, resumenGeneral } from "../../../api/resumen";
 
 export default function ResumenPeriodo() {
   const { periodoId } = useParams();
@@ -17,6 +18,7 @@ export default function ResumenPeriodo() {
   const [periodoActual, setPeriodoActual] = useState(
     periodoId ? Number(periodoId) : ""
   );
+  const [modoResumen, setModoResumen] = useState("periodo"); // 👈 NUEVO
   const [items, setItems] = useState([]);
 
   // ======================
@@ -38,27 +40,37 @@ export default function ResumenPeriodo() {
   }, []);
 
   // ======================
+  // Sincronizar URL → estado
+  // ======================
+  useEffect(() => {
+    if (periodoId) {
+      setPeriodoActual(Number(periodoId));
+    }
+  }, [periodoId]);
+
+  // ======================
   // Cargar resumen
   // ======================
   useEffect(() => {
-    if (!periodoActual) return;
+    const cargar = async () => {
+      if (modoResumen === "periodo" && !periodoActual) return;
 
-    const cargarResumen = async () => {
-      const res = await resumenPorPeriodo(periodoActual);
+      const res =
+        modoResumen === "periodo"
+          ? await resumenPorPeriodo(periodoActual)
+          : await resumenGeneral();
+
       setItems(res.data || []);
     };
 
-    cargarResumen();
-  }, [periodoActual]);
+    cargar();
+  }, [modoResumen, periodoActual]);
 
   // ======================
   // Columnas
   // ======================
   const columns = [
-    {
-      key: "nombre",
-      label: "Persona",
-    },
+    { key: "nombre", label: "Persona" },
     {
       key: "total_aportes",
       label: "Aportes",
@@ -90,24 +102,54 @@ export default function ResumenPeriodo() {
   // ======================
   return (
     <Layout>
+      <div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 12,
+    marginBottom: 12,
+  }}
+>
+  {/* Select período */}
+  <Select
+    value={periodoActual}
+    onChange={e => {
+      const id = Number(e.target.value);
+      setPeriodoActual(id);
+      navigate(`/resumen/periodo/${id}`);
+    }}
+    disabled={modoResumen !== "periodo"}
+    style={{
+      minWidth: 220,
+      height: 36,
+    }}
+  >
+    {periodos.map(p => (
+      <option key={p.id} value={p.id}>
+        {p.nombre}
+      </option>
+    ))}
+  </Select>
+
+  {/* Select modo */}
+  <Select
+    value={modoResumen}
+    onChange={e => setModoResumen(e.target.value)}
+    style={{
+      minWidth: 180,
+      height: 36,
+    }}
+  >
+    <option value="periodo">📅 Por período</option>
+    <option value="acumulado">📊 Acumulado</option>
+  </Select>
+</div>
       <PageHeader
-        title="📊 Resumen por periodo"
+        title="📊 Resumen"
+
         rightContent={
-          <Select
-            value={periodoActual}
-            onChange={e => {
-              const id = Number(e.target.value);
-              setPeriodoActual(id);
-              navigate(`/resumen/periodo/${id}`);
-            }}
-            style={{ minWidth: 220 }}
-          >
-            {periodos.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </Select>
+          <>
+          </>
         }
       />
 
