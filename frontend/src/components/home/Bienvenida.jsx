@@ -4,7 +4,7 @@ import useAuth from "../../auth/useAuth";
 
 export default function Bienvenida() {
     const { user } = useAuth();
-    const username = user?.nombre || "Usuario";
+    const username = user?.correo?.split("@")[0] || "Usuario";
 
     return (
         <div style={styles.card}>
@@ -14,12 +14,12 @@ export default function Bienvenida() {
                 </h1>
 
                 <p style={styles.subtitle}>
-                    Sistema de Gestión de Ferretería · Panel principal
+                    quien gasto eh! · Panel principal
                 </p>
             </div>
 
             <div style={styles.badge}>
-                Buen día para vender 🔧
+                Buen día!, Listo para registrar movimientos
             </div>
         </div>
     );
