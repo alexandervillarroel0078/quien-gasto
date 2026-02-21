@@ -15,38 +15,69 @@ export default function AporteForm({
   soloLectura = false,
 }) {
   const [fecha, setFecha] = useState("");
-  const [monto, setMonto] = useState("");
+  const [monto, setMonto] = useState(""); // siempre string para el input
   const [nota, setNota] = useState("");
   const [periodoId, setPeriodoId] = useState("");
   const [periodos, setPeriodos] = useState([]);
 
   useEffect(() => {
-    listarPeriodos(1, 200).then((r) => setPeriodos(r.data.items || []));
+    let mounted = true;
+
+    listarPeriodos(1, 200)
+      .then((r) => {
+        // defensivo: soporta {items: []} o [] directo
+        const data = r?.data?.items ?? r?.data ?? [];
+        if (mounted) setPeriodos(data);
+      })
+      .catch(() => {
+        if (mounted) setPeriodos([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!initialData) return;
-    setFecha(initialData.fecha);
-    setMonto(initialData.monto);
-    setNota(initialData.nota || "");
-    setPeriodoId(initialData.periodo_id ?? "");
+    if (!initialData) {
+      // reset cuando es "crear"
+      setFecha("");
+      setMonto("");
+      setNota("");
+      setPeriodoId("");
+      return;
+    }
+
+    // ✅ CLAVE: monto viene como Decimal -> string ("500.00")
+    // lo dejamos como string para el input type="number"
+    setFecha(initialData.fecha ?? "");
+    setMonto(initialData.monto != null ? String(initialData.monto) : "");
+    setNota(initialData.nota ?? "");
+    setPeriodoId(initialData.periodo_id != null ? String(initialData.periodo_id) : "");
   }, [initialData]);
 
   const submit = () => {
+    if (soloLectura) return;
+
     if (!fecha || !monto) {
-      return alert("Fecha y monto son obligatorios");
+      alert("Fecha y monto son obligatorios");
+      return;
     }
+
+    const montoNum = Number(monto);
+    if (Number.isNaN(montoNum) || montoNum <= 0) {
+      alert("Monto inválido");
+      return;
+    }
+
     onSubmit({
       fecha,
-      monto: Number(monto),
-      nota: nota || null,
+      monto: montoNum,
+      nota: nota?.trim() ? nota.trim() : null,
       periodo_id: periodoId ? Number(periodoId) : null,
     });
   };
 
-  // ======================
-  // Render
-  // ======================
   return (
     <FormCard>
       <FormLayout>
@@ -55,7 +86,7 @@ export default function AporteForm({
             type="date"
             value={fecha}
             disabled={soloLectura}
-            onChange={e => setFecha(e.target.value)}
+            onChange={(e) => setFecha(e.target.value)}
           />
         </FormField>
 
@@ -65,7 +96,7 @@ export default function AporteForm({
             step="0.01"
             value={monto}
             disabled={soloLectura}
-            onChange={e => setMonto(e.target.value)}
+            onChange={(e) => setMonto(e.target.value)}
           />
         </FormField>
 
@@ -88,7 +119,7 @@ export default function AporteForm({
           <Input
             value={nota}
             disabled={soloLectura}
-            onChange={e => setNota(e.target.value)}
+            onChange={(e) => setNota(e.target.value)}
           />
         </FormField>
 
