@@ -11,20 +11,24 @@ from core.auth import get_current_user
 
 router = APIRouter(prefix="/aportes", tags=["Aportes"])
 
-# =========================
-# LISTAR
-# =========================
 @router.get("/", response_model=Page[AporteResponse])
 def listar_aportes(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     q: str | None = Query(None),
     periodo_id: int | None = Query(None),
+    persona_id: int | None = Query(None),  # 👈 NUEVO
     db: Session = Depends(get_db),
 ):
     query = db.query(Aporte).join(Persona)
 
+    # 🔍 filtro por persona
+    if persona_id is not None:
+        query = query.filter(Aporte.persona_id == persona_id)
+
+    # 🔍 búsqueda textual
     if q and q.strip():
+        q = q.strip()
         query = query.filter(
             or_(
                 Persona.nombre.ilike(f"%{q}%"),
@@ -32,13 +36,15 @@ def listar_aportes(
             )
         )
 
-    if periodo_id:
+    # 🗓️ filtro por periodo
+    if periodo_id is not None:
         query = query.filter(Aporte.periodo_id == periodo_id)
 
     total = query.count()
 
     items = (
-        query.order_by(Aporte.fecha.desc(), Aporte.id.desc())
+        query
+        .order_by(Aporte.fecha.desc(), Aporte.id.desc())
         .offset((page - 1) * size)
         .limit(size)
         .all()
@@ -52,9 +58,7 @@ def listar_aportes(
         "pages": (total + size - 1) // size,
     }
 
-# =========================
-# CREAR
-# =========================
+
 @router.post("/", response_model=AporteResponse)
 def crear(
     data: AporteCreate,

@@ -7,10 +7,21 @@ from models.models import Periodo, Aporte, Gasto
 from schemas.common import Page
 from schemas.periodo import PeriodoCreate, PeriodoUpdate, PeriodoResponse
 from core.auth import get_current_user
+from schemas.periodo import PeriodoLookup
 
 router = APIRouter(prefix="/periodos", tags=["Periodos"])
 
+@router.get("/lookup", response_model=list[PeriodoLookup])
+def lookup_periodos(
+    solo_abiertos: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Periodo.id, Periodo.nombre)
 
+    if solo_abiertos:
+        query = query.filter(Periodo.cerrado == False)
+
+    return query.order_by(Periodo.fecha_inicio.desc()).all()
 # =========================
 # LISTAR
 # =========================

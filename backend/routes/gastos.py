@@ -11,20 +11,29 @@ from core.auth import get_current_user
 
 router = APIRouter(prefix="/gastos", tags=["Gastos"])
 
-# =========================
-# LISTAR
-# =========================
+ 
 @router.get("/", response_model=Page[GastoResponse])
 def listar_gastos(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     q: str | None = Query(None),
     periodo_id: int | None = Query(None),
+    persona_id: int | None = Query(None),  # 👈 NUEVO
     db: Session = Depends(get_db),
 ):
-    query = db.query(Gasto).options(joinedload(Gasto.categoria)).join(Persona)
+    query = (
+        db.query(Gasto)
+        .options(joinedload(Gasto.categoria))
+        .join(Persona)
+    )
 
+    # 🔍 filtro por persona
+    if persona_id is not None:
+        query = query.filter(Gasto.persona_id == persona_id)
+
+    # 🔍 búsqueda textual
     if q and q.strip():
+        q = q.strip()
         query = query.filter(
             or_(
                 Persona.nombre.ilike(f"%{q}%"),
@@ -32,7 +41,8 @@ def listar_gastos(
             )
         )
 
-    if periodo_id:
+    # 🗓️ filtro por periodo
+    if periodo_id is not None:
         query = query.filter(Gasto.periodo_id == periodo_id)
 
     total = query.count()

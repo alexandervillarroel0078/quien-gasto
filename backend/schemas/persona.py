@@ -3,6 +3,13 @@ from datetime import datetime
 from typing import Optional
 
 
+class PersonaLookup(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
+        
 # =========================
 # CREATE
 # =========================

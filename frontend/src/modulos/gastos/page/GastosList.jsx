@@ -1,3 +1,4 @@
+// src/modulos/aportes/page/AportesList.jsx
 import { useCallback, useEffect, useState } from "react";
 
 import Layout from "../../../layouts/Layout";
@@ -17,10 +18,12 @@ import {
   anularGasto,
 } from "../../../api/gasto";
 
+import { lookupPersonas } from "../../../api/persona";
+import { lookupPeriodos } from "../../../api/periodo";
 import useAuth from "../../../auth/useAuth";
 
 export default function GastosList() {
-  const { user } = useAuth(); // 👈 USUARIO LOGUEADO
+  const { user } = useAuth();
 
   // ======================
   // Estados
@@ -35,28 +38,52 @@ export default function GastosList() {
   const size = 20;
 
   const [q, setQ] = useState("");
+  const [personaId, setPersonaId] = useState(null);
+  const [periodoId, setPeriodoId] = useState(null);
+
+  const [personas, setPersonas] = useState([]);
+  const [periodos, setPeriodos] = useState([]);
 
   // ======================
-  // Cargar
+  // Lookups
+  // ======================
+  useEffect(() => {
+    lookupPersonas().then(res => setPersonas(res.data));
+    lookupPeriodos().then(res => setPeriodos(res.data));
+  }, []);
+
+  // ======================
+  // Cargar gastos
   // ======================
   const cargar = useCallback(
     async (p = page) => {
-      const res = await listarGastos(p, size, q);
+      const res = await listarGastos(
+        p,
+        size,
+        q,
+        periodoId, // 👈 periodo_id
+        personaId  // 👈 persona_id
+      );
+
       setItems(res.data.items);
       setPage(res.data.page);
       setPages(res.data.pages);
     },
-    [page, size, q]
+    [page, size, q, personaId, periodoId]
   );
 
   useEffect(() => {
     cargar(page);
   }, [page, cargar]);
 
+  // reset automático al cambiar filtros
   useEffect(() => {
-    const t = setTimeout(() => cargar(1), 300);
+    const t = setTimeout(() => {
+      setPage(1);
+      cargar(1);
+    }, 300);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, personaId, periodoId]);
 
   // ======================
   // Acciones
@@ -93,7 +120,7 @@ export default function GastosList() {
     cargar(page);
   };
 
-  const anular = async (id) => {
+  const anular = async id => {
     if (!window.confirm("¿Anular este gasto?")) return;
     await anularGasto(id);
     cargar(page);
@@ -108,14 +135,8 @@ export default function GastosList() {
       label: "#",
       render: (_, i) => i + 1 + (page - 1) * size,
     },
-    {
-      key: "fecha",
-      label: "Fecha",
-    },
-    {
-      key: "concepto",
-      label: "Concepto",
-    },
+    { key: "fecha", label: "Fecha" },
+    { key: "concepto", label: "Concepto" },
     {
       key: "persona",
       label: "Persona",
@@ -144,8 +165,63 @@ export default function GastosList() {
         onAction={nuevo}
         searchValue={q}
         onSearch={setQ}
-        searchPlaceholder="Buscar por concepto..."
+        searchPlaceholder="Buscar por concepto o persona..."
       />
+
+      {/* Filtros */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+        {/* Persona */}
+        <select
+          value={personaId ?? ""}
+          onChange={e =>
+            setPersonaId(e.target.value ? Number(e.target.value) : null)
+          }
+          style={{
+            minWidth: 220,
+            height: 36,
+            padding: "6px 12px",
+            borderRadius: 8,
+            border: "1px solid #2b2d33",
+            background: "#111217",
+            color: "#ffffff",
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+        >
+          <option value="">Todas las personas</option>
+          {personas.map(p => (
+            <option key={p.id} value={p.id}>
+              {p.nombre}
+            </option>
+          ))}
+        </select>
+
+        {/* Periodo */}
+        <select
+          value={periodoId ?? ""}
+          onChange={e =>
+            setPeriodoId(e.target.value ? Number(e.target.value) : null)
+          }
+          style={{
+            minWidth: 220,
+            height: 36,
+            padding: "6px 12px",
+            borderRadius: 8,
+            border: "1px solid #2b2d33",
+            background: "#111217",
+            color: "#ffffff",
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+        >
+          <option value="">Todos los periodos</option>
+          {periodos.map(p => (
+            <option key={p.id} value={p.id}>
+              {p.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <Table
         columns={columns}
@@ -160,8 +236,8 @@ export default function GastosList() {
                   Ver
                 </Button>
               }
-              items={[
-                ...(esMio && g.estado !== "ANULADO"
+              items={
+                esMio && g.estado !== "ANULADO"
                   ? [
                       {
                         label: "Editar",
@@ -175,8 +251,8 @@ export default function GastosList() {
                         onClick: () => anular(g.id),
                       },
                     ]
-                  : []),
-              ]}
+                  : []
+              }
             />
           );
         }}

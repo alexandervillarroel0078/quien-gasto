@@ -18,3 +18,11 @@ export const desactivarPersona = (id) =>
 
 export const activarPersona = (id) =>
   api.patch(`/personas/${id}/activar`);
+
+// =========================
+// LOOKUP PERSONAS
+// =========================
+export const lookupPersonas = (q = "") =>
+  api.get("/personas/lookup", {
+    params: q ? { q } : {},
+  });

@@ -1,6 +1,13 @@
 from pydantic import BaseModel
 from datetime import date
 
+class PeriodoLookup(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
+
 class PeriodoCreate(BaseModel):
     nombre: str
     fecha_inicio: date

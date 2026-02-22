@@ -8,12 +8,29 @@ from fastapi import Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from schemas.common import Page
-
+from schemas.persona import PersonaLookup
+from typing import List
 
 router = APIRouter(prefix="/personas", tags=["Personas"])
 
 
 
+@router.get("/lookup", response_model=list[PersonaLookup])
+def lookup_personas(
+    q: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    query = (
+        db.query(Persona.id, Persona.nombre)
+        .filter(Persona.activo == True)
+    )
+
+    if q and q.strip():
+        query = query.filter(
+            Persona.nombre.ilike(f"%{q.strip()}%")
+        )
+
+    return query.order_by(Persona.nombre.asc()).all()
 
 # =========================
 # LISTAR PERSONAS ACTIVAS

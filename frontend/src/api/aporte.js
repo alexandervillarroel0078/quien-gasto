@@ -4,8 +4,25 @@ import api from "./api";
 // =======================
 // LISTAR
 // =======================
-export const listarAportes = (page = 1, size = 20, q = "", periodo_id = null) =>
-  api.get("/aportes", { params: { page, size, q, periodo_id } });
+// export const listarAportes = (page = 1, size = 20, q = "", periodo_id = null) =>
+//   api.get("/aportes", { params: { page, size, q, periodo_id } });
+
+export const listarAportes = (
+  page = 1,
+  size = 20,
+  q = "",
+  periodo_id = null,
+  persona_id = null
+) =>
+  api.get("/aportes", {
+    params: {
+      page,
+      size,
+      ...(q ? { q } : {}),
+      ...(periodo_id ? { periodo_id } : {}),
+      ...(persona_id ? { persona_id } : {}),
+    },
+  });
 
 // =======================
 // CREAR

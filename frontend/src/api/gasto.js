@@ -1,8 +1,25 @@
 // frontend/src/api/gasto.js
 import api from "./api";
 
-export const listarGastos = (page = 1, size = 20, q = "", periodo_id = null) =>
-  api.get("/gastos/", { params: { page, size, q, periodo_id } });
+// export const listarGastos = (page = 1, size = 20, q = "", periodo_id = null) =>
+//   api.get("/gastos/", { params: { page, size, q, periodo_id } });
+
+export const listarGastos = (
+  page = 1,
+  size = 20,
+  q = "",
+  periodo_id = null,
+  persona_id = null
+) =>
+  api.get("/gastos/", {
+    params: {
+      page,
+      size,
+      ...(q ? { q } : {}),
+      ...(periodo_id ? { periodo_id } : {}),
+      ...(persona_id ? { persona_id } : {}),
+    },
+  });
 
 export const obtenerGasto = (id) =>
   api.get(`/gastos/${id}`);

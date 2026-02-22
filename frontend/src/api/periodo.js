@@ -1,6 +1,11 @@
 // frontend/src/api/periodo.js
 import api from "./api";
 
+export const lookupPeriodos = (soloAbiertos = false) =>
+  api.get("/periodos/lookup", {
+    params: soloAbiertos ? { solo_abiertos: true } : {},
+  });
+
 // =======================
 // LISTAR
 // =======================
