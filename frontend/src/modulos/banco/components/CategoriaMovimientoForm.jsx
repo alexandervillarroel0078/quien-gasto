@@ -1,4 +1,4 @@
-//src/modulos/persona/components/PersonaForm.jsx
+//src\modulos\banco\components\CategoriaMovimientoForm.jsx
 import { useEffect, useState } from "react";
 
 import Button from "../../../shared/components/Button";
@@ -7,36 +7,27 @@ import FormField from "../../../shared/components/form/FormField";
 import Input from "../../../shared/components/form/Input";
 import FormLayout from "../../../shared/components/form/FormLayout";
 
-export default function PersonaForm({
+export default function CategoriaMovimientoForm({
   initialData = null,
   onSubmit,
   textoBoton,
   soloLectura = false,
 }) {
   const [nombre, setNombre] = useState("");
+  const [tipo, setTipo] = useState("EGRESO");
 
-  // ======================
-  // Precargar
-  // ======================
   useEffect(() => {
     if (!initialData) return;
     setNombre(initialData.nombre || "");
+    setTipo(initialData.tipo || "EGRESO");
   }, [initialData]);
 
-  // ======================
-  // Submit
-  // ======================
   const submit = () => {
-    if (!nombre.trim()) {
-      return alert("El nombre es obligatorio");
-    }
+    if (!nombre.trim()) return alert("Nombre obligatorio");
 
-    onSubmit({ nombre });
+    onSubmit({ nombre, tipo });
   };
 
-  // ======================
-  // Render
-  // ======================
   return (
     <FormCard>
       <FormLayout>
@@ -45,6 +36,14 @@ export default function PersonaForm({
             value={nombre}
             disabled={soloLectura}
             onChange={e => setNombre(e.target.value)}
+          />
+        </FormField>
+
+        <FormField label="Tipo (INGRESO / EGRESO)">
+          <Input
+            value={tipo}
+            disabled={soloLectura}
+            onChange={e => setTipo(e.target.value)}
           />
         </FormField>
 

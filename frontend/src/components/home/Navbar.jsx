@@ -63,6 +63,23 @@ const NAV_MODULES = {
       { label: "Bitácora", path: "/bitacora", icon: "🕒" },
     ],
   },
+  banco: {
+    title: "Banco",
+    icon: "🏦",
+    routes: [
+      "/cuentas",
+      "/movimientos",
+      "/categorias-movimiento",
+      "/banco/reportes", // 👈 NUEVO
+    ],
+    items: [
+      { label: "Cuentas", path: "/cuentas", icon: "💳" },
+      { label: "Movimientos", path: "/movimientos", icon: "💸" },
+      { label: "Categorías Movimiento", path: "/categorias-movimiento", icon: "📂" },
+      { label: "Reportes", path: "/banco/reportes", icon: "📊" }, // 👈 NUEVO
+    ],
+  },
+
 };
 
 

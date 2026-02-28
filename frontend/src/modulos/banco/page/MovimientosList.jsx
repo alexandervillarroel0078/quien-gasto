@@ -1,4 +1,4 @@
-// src/modulos/persona/page/PersonasList.jsx
+//src\modulos\banco\page\MovimientoList.jsx
 import { useCallback, useEffect, useState } from "react";
 
 import Layout from "../../../layouts/Layout";
@@ -9,24 +9,24 @@ import ActionMenu from "../../../shared/components/ActionMenu";
 import PageHeader from "../../../shared/components/PageHeader";
 import Pagination from "../../../shared/components/Pagination";
 
-import PersonaForm from "../components/PersonaForm";
-import {
-  listarPersonas,
-  obtenerPersona,
-  crearPersona,
-  editarPersona,
-  activarPersona,
-  desactivarPersona,
-} from "../../../api/persona";
+import MovimientoForm from "../components/MovimientoForm";
 
-export default function PersonasList() {
+import {
+  listarMovimientos,
+  obtenerMovimiento,
+  crearMovimiento,
+  editarMovimiento,
+  anularMovimiento,
+} from "../../../api/banco/movimiento";
+
+export default function MovimientosList() {
   // ======================
   // Estados
   // ======================
   const [items, setItems] = useState([]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [actual, setActual] = useState(null);
-  const [modo, setModo] = useState("crear"); // crear | editar | ver
+  const [modo, setModo] = useState("crear");
 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
@@ -39,7 +39,7 @@ export default function PersonasList() {
   // ======================
   const cargar = useCallback(
     async (p = page) => {
-      const res = await listarPersonas(p, size, q);
+      const res = await listarMovimientos(p, size, q);
       setItems(res.data.items);
       setPage(res.data.page);
       setPages(res.data.pages);
@@ -66,14 +66,14 @@ export default function PersonasList() {
   };
 
   const ver = async id => {
-    const res = await obtenerPersona(id);
+    const res = await obtenerMovimiento(id);
     setActual(res.data);
     setModo("ver");
     setMostrarForm(true);
   };
 
   const editar = async id => {
-    const res = await obtenerPersona(id);
+    const res = await obtenerMovimiento(id);
     setActual(res.data);
     setModo("editar");
     setMostrarForm(true);
@@ -81,22 +81,17 @@ export default function PersonasList() {
 
   const guardar = async data => {
     if (modo === "crear") {
-      await crearPersona(data);
+      await crearMovimiento(data);
     } else {
-      await editarPersona(actual.id, data);
+      await editarMovimiento(actual.id, data);
     }
     setMostrarForm(false);
     cargar(page);
   };
 
-  const baja = async id => {
-    if (!window.confirm("¿Desactivar persona?")) return;
-    await desactivarPersona(id);
-    cargar(page);
-  };
-
-  const activar = async id => {
-    await activarPersona(id);
+  const anular = async id => {
+    if (!window.confirm("¿Anular movimiento?")) return;
+    await anularMovimiento(id);
     cargar(page);
   };
 
@@ -109,11 +104,31 @@ export default function PersonasList() {
       label: "#",
       render: (_, i) => i + 1 + (page - 1) * size,
     },
-    { key: "nombre", label: "Nombre" },
     {
-      key: "activo",
+      key: "fecha",
+      label: "Fecha",
+    },
+    {
+      key: "cuenta",
+      label: "Cuenta",
+      render: m => m.cuenta?.nombre || "-",
+    },
+    {
+      key: "tipo",
+      label: "Tipo",
+    },
+    {
+      key: "monto",
+      label: "Monto",
+    },
+    {
+      key: "categoria",
+      label: "Categoría",
+      render: m => m.categoria?.nombre || "-",
+    },
+    {
+      key: "estado",
       label: "Estado",
-      render: p => (p.activo ? "Activo" : "Inactivo"),
     },
   ];
 
@@ -123,22 +138,22 @@ export default function PersonasList() {
   return (
     <Layout>
       <PageHeader
-        title="👥 Personas"
-        actionLabel="+ Nueva persona"
+        title="💳 Movimientos"
+        actionLabel="+ Nuevo movimiento"
         onAction={nuevo}
         searchValue={q}
         onSearch={setQ}
-        searchPlaceholder="Buscar por nombre..."
+        searchPlaceholder="Buscar por concepto..."
       />
 
       <Table
         columns={columns}
         data={items}
-        onRowClick={p => ver(p.id)}
-        renderActions={p => (
+        onRowClick={m => ver(m.id)}
+        renderActions={m => (
           <ActionMenu
             primaryAction={
-              <Button size="sm" onClick={() => ver(p.id)}>
+              <Button size="sm" onClick={() => ver(m.id)}>
                 Ver
               </Button>
             }
@@ -146,21 +161,15 @@ export default function PersonasList() {
               {
                 label: "Editar",
                 icon: "✏️",
-                onClick: () => editar(p.id),
+                onClick: () => editar(m.id),
               },
-              p.activo
-                ? {
-                    label: "Desactivar",
-                    icon: "🗑",
-                    danger: true,
-                    onClick: () => baja(p.id),
-                  }
-                : {
-                    label: "Activar",
-                    icon: "✅",
-                    onClick: () => activar(p.id),
-                  },
-            ]}
+              m.estado !== "ANULADO" && {
+                label: "Anular",
+                icon: "🗑",
+                danger: true,
+                onClick: () => anular(m.id),
+              },
+            ].filter(Boolean)}
           />
         )}
       />
@@ -177,14 +186,14 @@ export default function PersonasList() {
         onClose={() => setMostrarForm(false)}
         title={
           modo === "crear"
-            ? "➕ Nueva Persona"
+            ? "➕ Nuevo Movimiento"
             : modo === "editar"
-            ? "✏️ Editar Persona"
-            : "👁️ Detalle Persona"
+            ? "✏️ Editar Movimiento"
+            : "👁️ Detalle Movimiento"
         }
-        width={380}
+        width={420}
       >
-        <PersonaForm
+        <MovimientoForm
           initialData={actual}
           onSubmit={guardar}
           soloLectura={modo === "ver"}

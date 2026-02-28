@@ -1,4 +1,4 @@
-// src/modulos/persona/page/PersonasList.jsx
+// src/modulos/banco/page/CuentasList.jsx
 import { useCallback, useEffect, useState } from "react";
 
 import Layout from "../../../layouts/Layout";
@@ -9,24 +9,24 @@ import ActionMenu from "../../../shared/components/ActionMenu";
 import PageHeader from "../../../shared/components/PageHeader";
 import Pagination from "../../../shared/components/Pagination";
 
-import PersonaForm from "../components/PersonaForm";
-import {
-  listarPersonas,
-  obtenerPersona,
-  crearPersona,
-  editarPersona,
-  activarPersona,
-  desactivarPersona,
-} from "../../../api/persona";
+import CuentaForm from "../components/CuentaForm";
 
-export default function PersonasList() {
+import {
+  listarCuentas,
+  obtenerCuenta,
+  crearCuenta,
+  editarCuenta,
+  anularCuenta,
+} from "../../../api/banco/cuenta";
+
+export default function CuentasList() {
   // ======================
   // Estados
   // ======================
   const [items, setItems] = useState([]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [actual, setActual] = useState(null);
-  const [modo, setModo] = useState("crear"); // crear | editar | ver
+  const [modo, setModo] = useState("crear");
 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
@@ -39,7 +39,7 @@ export default function PersonasList() {
   // ======================
   const cargar = useCallback(
     async (p = page) => {
-      const res = await listarPersonas(p, size, q);
+      const res = await listarCuentas(p, size, q);
       setItems(res.data.items);
       setPage(res.data.page);
       setPages(res.data.pages);
@@ -66,14 +66,14 @@ export default function PersonasList() {
   };
 
   const ver = async id => {
-    const res = await obtenerPersona(id);
+    const res = await obtenerCuenta(id);
     setActual(res.data);
     setModo("ver");
     setMostrarForm(true);
   };
 
   const editar = async id => {
-    const res = await obtenerPersona(id);
+    const res = await obtenerCuenta(id);
     setActual(res.data);
     setModo("editar");
     setMostrarForm(true);
@@ -81,22 +81,18 @@ export default function PersonasList() {
 
   const guardar = async data => {
     if (modo === "crear") {
-      await crearPersona(data);
+      await crearCuenta(data);
     } else {
-      await editarPersona(actual.id, data);
+      await editarCuenta(actual.id, data);
     }
+
     setMostrarForm(false);
     cargar(page);
   };
 
   const baja = async id => {
-    if (!window.confirm("¿Desactivar persona?")) return;
-    await desactivarPersona(id);
-    cargar(page);
-  };
-
-  const activar = async id => {
-    await activarPersona(id);
+    if (!window.confirm("¿Desactivar cuenta?")) return;
+    await anularCuenta(id);
     cargar(page);
   };
 
@@ -110,10 +106,14 @@ export default function PersonasList() {
       render: (_, i) => i + 1 + (page - 1) * size,
     },
     { key: "nombre", label: "Nombre" },
+    { key: "banco", label: "Banco" },
+    { key: "numero_cuenta", label: "N° Cuenta" },
+    { key: "tipo", label: "Tipo" },
+    { key: "moneda", label: "Moneda" },
     {
       key: "activo",
       label: "Estado",
-      render: p => (p.activo ? "Activo" : "Inactivo"),
+      render: c => (c.activo ? "Activa" : "Inactiva"),
     },
   ];
 
@@ -123,22 +123,22 @@ export default function PersonasList() {
   return (
     <Layout>
       <PageHeader
-        title="👥 Personas"
-        actionLabel="+ Nueva persona"
+        title="🏦 Cuentas"
+        actionLabel="+ Nueva cuenta"
         onAction={nuevo}
         searchValue={q}
         onSearch={setQ}
-        searchPlaceholder="Buscar por nombre..."
+        searchPlaceholder="Buscar por nombre o banco..."
       />
 
       <Table
         columns={columns}
         data={items}
-        onRowClick={p => ver(p.id)}
-        renderActions={p => (
+        onRowClick={c => ver(c.id)}
+        renderActions={c => (
           <ActionMenu
             primaryAction={
-              <Button size="sm" onClick={() => ver(p.id)}>
+              <Button size="sm" onClick={() => ver(c.id)}>
                 Ver
               </Button>
             }
@@ -146,21 +146,15 @@ export default function PersonasList() {
               {
                 label: "Editar",
                 icon: "✏️",
-                onClick: () => editar(p.id),
+                onClick: () => editar(c.id),
               },
-              p.activo
-                ? {
-                    label: "Desactivar",
-                    icon: "🗑",
-                    danger: true,
-                    onClick: () => baja(p.id),
-                  }
-                : {
-                    label: "Activar",
-                    icon: "✅",
-                    onClick: () => activar(p.id),
-                  },
-            ]}
+              c.activo && {
+                label: "Desactivar",
+                icon: "🗑",
+                danger: true,
+                onClick: () => baja(c.id),
+              },
+            ].filter(Boolean)}
           />
         )}
       />
@@ -177,14 +171,14 @@ export default function PersonasList() {
         onClose={() => setMostrarForm(false)}
         title={
           modo === "crear"
-            ? "➕ Nueva Persona"
+            ? "➕ Nueva Cuenta"
             : modo === "editar"
-            ? "✏️ Editar Persona"
-            : "👁️ Detalle Persona"
+            ? "✏️ Editar Cuenta"
+            : "👁️ Detalle Cuenta"
         }
-        width={380}
+        width={420}
       >
-        <PersonaForm
+        <CuentaForm
           initialData={actual}
           onSubmit={guardar}
           soloLectura={modo === "ver"}

@@ -14,6 +14,11 @@ import BitacoraRoutes from "./bitacora.routes";
 import CategoriasGastoRoutes from "./categoriasGasto.routes";
 import ReportesRoutes from "./reportes.routes";
 
+import CategoriaMovimientoRoutes from "./categoriamovimiento.routes";
+import CuentaRoutes from "./cuenta.routes";
+import MovimientoRoutes from "./movimiento.routes";
+import ReporteCuentasRoutes from "./reportecuentas.routes";
+
 export default function AppRoutes() {
   return (
     <BrowserRouter>
@@ -35,6 +40,13 @@ export default function AppRoutes() {
           {BitacoraRoutes}
           {CategoriasGastoRoutes}
           {ReportesRoutes}
+
+
+
+          {CategoriaMovimientoRoutes}
+          {CuentaRoutes}
+          {MovimientoRoutes}
+          {ReporteCuentasRoutes}
         </Route>
       </Routes>
     </BrowserRouter>

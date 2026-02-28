@@ -157,3 +157,62 @@ class Periodo(Base):
             name="ck_periodo_fechas_validas"
         ),
     )
+
+
+TipoCuentaEnum = Enum(
+    "BANCO",
+    "CAJA",
+    "AHORRO",
+    "INVERSION",
+    name="tipo_cuenta"
+)
+
+class Cuenta(Base):
+    __tablename__ = "cuentas"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    nombre = Column(String(100), nullable=False)  
+    numero_cuenta = Column(String(50), nullable=True, unique=True)
+    banco = Column(String(100), nullable=True)
+    tipo = Column(TipoCuentaEnum, nullable=False)
+    moneda = Column(String(10), default="BOB")
+    saldo_inicial = Column(Numeric(12, 2), default=0)
+    activo = Column(Boolean, default=True)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    movimientos = relationship("Movimiento", back_populates="cuenta")
+
+class CategoriaMovimiento(Base):
+    __tablename__ = "categorias_movimiento"
+
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(100), nullable=False, unique=True)
+    tipo = Column(String(20), nullable=False)  # INGRESO o EGRESO
+    activo = Column(Boolean, default=True)
+
+    movimientos = relationship("Movimiento", back_populates="categoria")
+
+class Movimiento(Base):
+    __tablename__ = "movimientos"
+
+    id = Column(Integer, primary_key=True)
+
+    cuenta_id = Column(Integer, ForeignKey("cuentas.id"), nullable=False)
+    tipo = Column(String(20), nullable=False)  # INGRESO / EGRESO
+    monto = Column(Numeric(12, 2), nullable=False)
+
+    concepto = Column(String(200))
+    fecha = Column(Date, nullable=False)
+
+    estado = Column(EstadoMovimientoEnum, default="ACTIVO")
+
+    cuenta = relationship("Cuenta", back_populates="movimientos")
+    categoria_id = Column(Integer, ForeignKey("categorias_movimiento.id"), nullable=True)
+    
+    categoria = relationship("CategoriaMovimiento", back_populates="movimientos")
+    __table_args__ = (
+        CheckConstraint("monto > 0", name="ck_movimiento_monto_positivo"),
+    )
+
+
+

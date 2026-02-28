@@ -8,7 +8,9 @@ from seeds.seed_categorias_gasto import seed_categorias_gasto
 from seeds.seed_aportes import seed_aportes
 from seeds.seed_gastos import seed_gastos
 
- 
+from seeds.seed_categorias_movimiento import seed_categorias_movimiento
+from seeds.seed_cuentas import seed_cuentas
+from seeds.seed_movimientos import seed_movimientos
 
 def run_seeds():
     db = SessionLocal()
@@ -32,6 +34,15 @@ def run_seeds():
         # ===============================
         seed_aportes(db, 100)
         seed_gastos(db, 120)
+
+        seed_categorias_movimiento(db, 20)
+        seed_cuentas(db, 15)
+        seed_movimientos(db, 200)
+
+
+
+
+
         db.commit()
         print("🌱 TODOS los seeds ejecutados correctamente")
 
