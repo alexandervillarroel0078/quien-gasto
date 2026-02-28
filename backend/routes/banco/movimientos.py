@@ -13,7 +13,12 @@ from schemas.common import Page
 from core.auth import get_current_user
 
 router = APIRouter(prefix="/movimientos", tags=["Movimientos"])
+from datetime import date, datetime, timedelta
+from sqlalchemy import extract
 
+from datetime import date
+import calendar
+from sqlalchemy import extract
 
 @router.get("/", response_model=Page[MovimientoResponse])
 def listar(
@@ -21,20 +26,65 @@ def listar(
     size: int = Query(20, ge=1, le=100),
     q: str | None = Query(None),
     cuenta_id: int | None = Query(None),
+    anio: int | None = Query(None),
+    mes: int | None = Query(None, ge=1, le=12),
+    semana_mes: int | None = Query(None, ge=1, le=5),
+    dia: date | None = Query(None),
     db: Session = Depends(get_db),
 ):
+
     query = (
         db.query(Movimiento)
         .options(joinedload(Movimiento.cuenta))
         .options(joinedload(Movimiento.categoria))
     )
 
-    if cuenta_id is not None:
+    # ======================
+    # Filtros básicos
+    # ======================
+
+    if cuenta_id:
         query = query.filter(Movimiento.cuenta_id == cuenta_id)
 
-    if q and q.strip():
+    if q:
         query = query.filter(
             Movimiento.concepto.ilike(f"%{q}%")
+        )
+
+    if dia:
+        query = query.filter(
+            extract("year", Movimiento.fecha) == dia.year,
+            extract("month", Movimiento.fecha) == dia.month,
+            extract("day", Movimiento.fecha) == dia.day,
+        )
+
+    if anio:
+        query = query.filter(
+            extract("year", Movimiento.fecha) == anio
+        )
+
+    if mes:
+        query = query.filter(
+            extract("month", Movimiento.fecha) == mes
+        )
+
+    # ======================
+    # Semana del mes
+    # ======================
+
+    if anio and mes and semana_mes:
+        inicio_dia = (semana_mes - 1) * 7 + 1
+        fin_dia = semana_mes * 7
+
+        ultimo_dia = calendar.monthrange(anio, mes)[1]
+        fin_dia = min(fin_dia, ultimo_dia)
+
+        fecha_inicio = date(anio, mes, inicio_dia)
+        fecha_fin = date(anio, mes, fin_dia)
+
+        query = query.filter(
+            Movimiento.fecha >= fecha_inicio,
+            Movimiento.fecha <= fecha_fin
         )
 
     total = query.count()
@@ -54,9 +104,6 @@ def listar(
         "pages": (total + size - 1) // size,
     }
 
-# =========================
-# OBTENER
-# =========================
 @router.get("/{id}", response_model=MovimientoResponse)
 def obtener_movimiento(
     id: int,
@@ -74,6 +121,7 @@ def obtener_movimiento(
         raise HTTPException(404, "Movimiento no encontrado")
 
     return movimiento
+
 
 @router.post("/", response_model=MovimientoResponse)
 def crear(

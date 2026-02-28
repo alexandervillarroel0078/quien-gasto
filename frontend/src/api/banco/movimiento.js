@@ -5,7 +5,11 @@ export const listarMovimientos = (
   page = 1,
   size = 20,
   q = "",
-  cuenta_id = null
+  cuenta_id = null,
+  anio = null,
+  mes = null,
+  semanaMes = null,
+  dia = null
 ) =>
   api.get("/movimientos/", {
     params: {
@@ -13,8 +17,13 @@ export const listarMovimientos = (
       size,
       ...(q ? { q } : {}),
       ...(cuenta_id ? { cuenta_id } : {}),
+      ...(anio ? { anio } : {}),
+      ...(mes ? { mes } : {}),
+      ...(semanaMes ? { semana_mes: semanaMes } : {}), // 🔥 IMPORTANTE
+      ...(dia ? { dia } : {}),
     },
   });
+
 
 export const obtenerMovimiento = id =>
   api.get(`/movimientos/${id}`);

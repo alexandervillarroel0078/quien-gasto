@@ -34,17 +34,28 @@ export default function MovimientosList() {
 
   const [q, setQ] = useState("");
 
+  const [anio, setAnio] = useState("");
+  const [mes, setMes] = useState("");
+  const [semanaMes, setSemanaMes] = useState("");
   // ======================
   // Cargar
   // ======================
   const cargar = useCallback(
     async (p = page) => {
-      const res = await listarMovimientos(p, size, q);
+      const res = await listarMovimientos(
+        p,
+        size,
+        q,
+        null,
+        anio || null,
+        mes || null,
+        semanaMes || null
+      );
       setItems(res.data.items);
       setPage(res.data.page);
       setPages(res.data.pages);
     },
-    [page, size, q]
+    [page, size, q, anio, mes, semanaMes]
   );
 
   useEffect(() => {
@@ -56,6 +67,13 @@ export default function MovimientosList() {
     return () => clearTimeout(t);
   }, [q]);
 
+  useEffect(() => {
+    cargar(1);
+  }, [anio, mes, semanaMes]);
+
+  useEffect(() => {
+    setSemanaMes("");
+  }, [anio, mes]);
   // ======================
   // Acciones
   // ======================
@@ -145,7 +163,68 @@ export default function MovimientosList() {
         onSearch={setQ}
         searchPlaceholder="Buscar por concepto..."
       />
+      <div style={{
+        display: "flex",
+        gap: "10px",
+        marginBottom: "15px",
+        flexWrap: "wrap"
+      }}>
 
+        {/* Año */}
+        <select
+          value={anio}
+          onChange={e => setAnio(e.target.value)}
+          style={{ padding: "6px 10px" }}
+        >
+          <option value="">Año</option>
+          {[2024, 2025, 2026, 2027].map(a => (
+            <option key={a} value={a}>{a}</option>
+          ))}
+        </select>
+
+        {/* Mes */}
+        <select
+          value={mes}
+          onChange={e => setMes(e.target.value)}
+          style={{ padding: "6px 10px" }}
+        >
+          <option value="">Mes</option>
+          {[
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+          ].map((m, i) => (
+            <option key={i + 1} value={i + 1}>{m}</option>
+          ))}
+        </select>
+
+        {/* Semana */}
+        <select
+          value={semanaMes}
+          onChange={e => setSemanaMes(e.target.value)}
+          disabled={!anio || !mes}
+          style={{ padding: "6px 10px" }}
+        >
+          <option value="">Semana del mes</option>
+          <option value="1">Semana 1 (1-7)</option>
+          <option value="2">Semana 2 (8-14)</option>
+          <option value="3">Semana 3 (15-21)</option>
+          <option value="4">Semana 4 (22-28)</option>
+          <option value="5">Semana 5 (29-fin)</option>
+        </select>
+
+        {/* Botón limpiar */}
+        <Button
+          size="sm"
+          onClick={() => {
+            setAnio("");
+            setMes("");
+            setSemanaMes("");
+          }}
+        >
+          Limpiar filtros
+        </Button>
+
+      </div>
       <Table
         columns={columns}
         data={items}
@@ -188,8 +267,8 @@ export default function MovimientosList() {
           modo === "crear"
             ? "➕ Nuevo Movimiento"
             : modo === "editar"
-            ? "✏️ Editar Movimiento"
-            : "👁️ Detalle Movimiento"
+              ? "✏️ Editar Movimiento"
+              : "👁️ Detalle Movimiento"
         }
         width={420}
       >
