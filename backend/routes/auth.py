@@ -23,6 +23,9 @@ class LoginRequest(BaseModel):
 # ====================================
 @router.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
+    print("Intento de login:")
+    print("Correo:", data.correo)
+    print("Password:", data.password)  # ⚠️ SOLO DEBUG
 
     # 1️⃣ Buscar usuario
     usuario = (

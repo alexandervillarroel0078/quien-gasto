@@ -48,6 +48,7 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://192.168.0.11:3000",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],

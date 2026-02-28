@@ -12,6 +12,7 @@ export default function Login() {
 
     const enviar = async () => {
         try {
+            
             await login(correo, password);
             navigate("/");
         } catch {
