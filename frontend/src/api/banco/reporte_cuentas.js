@@ -1,40 +1,47 @@
-// src\api\banco\reporte_cuentas.js 
-// src/api/banco/reporte_cuentas.js
+// src\api\banco\reporte_cuentas.js  
 import api from "../api";
 
-// ===============================
-// RESUMEN GENERAL
-// ===============================
-export const getResumenCuentas = (anio, mes = null, cuenta_id = null) =>
+export const getResumenCuentas = (
+  anio,
+  mes = null,
+  cuenta_id = null,
+  moneda = null
+) =>
   api.get("/reportes/cuentas/resumen", {
     params: {
-      ...(anio ? { anio } : {}),
-      ...(mes ? { mes } : {}),
-      ...(cuenta_id ? { cuenta_id } : {}),
+      ...(anio !== null ? { anio } : {}),
+      ...(mes !== null ? { mes } : {}),
+      ...(cuenta_id !== null ? { cuenta_id } : {}),
+      ...(moneda ? { moneda } : {}),
     },
   });
-// ===============================
-// INGRESOS VS EGRESOS POR MES
-// ===============================
-export const getMovimientosPorMes = (anio, mes = null, cuenta_id = null) =>
+  
+export const getMovimientosPorMes = (
+  anio,
+  mes = null,
+  cuenta_id = null,
+  moneda = null
+) =>
   api.get("/reportes/cuentas/por-mes", {
     params: {
       anio,
-      ...(mes ? { mes } : {}),
-      ...(cuenta_id ? { cuenta_id } : {}),
+      ...(mes !== null ? { mes } : {}),
+      ...(cuenta_id !== null ? { cuenta_id } : {}),
+      ...(moneda ? { moneda } : {}),
     },
   });
-
-// ===============================
-// DISTRIBUCIÓN POR CATEGORIA
-// ===============================
-export const getMovimientosPorCategoria = (tipo) =>
+  
+export const getMovimientosPorCategoria = (tipo, moneda = null) =>
   api.get("/reportes/cuentas/por-categoria", {
-    params: { tipo },
+    params: {
+      tipo,
+      ...(moneda ? { moneda } : {}),
+    },
   });
-
-// ===============================
-// SALDO POR CUENTA
-// ===============================
-export const getSaldoPorCuenta = () =>
-  api.get("/reportes/cuentas/saldo-por-cuenta");
+  
+export const getSaldoPorCuenta = (moneda = null) =>
+  api.get("/reportes/cuentas/saldo-por-cuenta", {
+    params: {
+      ...(moneda ? { moneda } : {}),
+    },
+  });

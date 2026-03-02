@@ -81,75 +81,75 @@ export default function MovimientoForm({
     <FormCard>
       <FormLayout>
 
-       <FormField label="Cuenta *">
-  <Select
-    value={cuentaId}
-    disabled={soloLectura}
-    onChange={(e) => setCuentaId(e.target.value)}
-  >
-    <option value="">Seleccione...</option>
-    {cuentas.map((c) => (
-      <option key={c.id} value={c.id}>
-        {c.nombre}
-      </option>
-    ))}
-  </Select>
-</FormField>
+        <FormField label="Cuenta *">
+          <Select
+            value={cuentaId}
+            disabled={soloLectura}
+            onChange={(e) => setCuentaId(e.target.value)}
+          >
+            <option value="">Seleccione...</option>
+            {cuentas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </Select>
+        </FormField>
 
-<FormField label="Tipo (INGRESO / EGRESO) *">
-  <Select
-    value={tipo}
-    disabled={soloLectura}
-    onChange={(e) => setTipo(e.target.value)}
-  >
-    <option value="INGRESO">INGRESO</option>
-    <option value="EGRESO">EGRESO</option>
-  </Select>
-</FormField>
+        <FormField label="Tipo (INGRESO / EGRESO) *">
+          <Select
+            value={tipo}
+            disabled={soloLectura}
+            onChange={(e) => setTipo(e.target.value)}
+          >
+            <option value="INGRESO">INGRESO</option>
+            <option value="EGRESO">EGRESO</option>
+          </Select>
+        </FormField>
 
-<FormField label="Monto *">
-  <Input
-    type="number"
-    step="0.01"
-    value={monto}
-    disabled={soloLectura}
-    onChange={(e) => setMonto(e.target.value)}
-  />
-</FormField>
+        <FormField label="Monto *">
+          <Input
+            type="number"
+            step="0.01"
+            value={monto}
+            disabled={soloLectura}
+            onChange={(e) => setMonto(e.target.value)}
+          />
+        </FormField>
 
-<FormField label="Concepto">
-  <Input
-    value={concepto}
-    disabled={soloLectura}
-    onChange={(e) => setConcepto(e.target.value)}
-  />
-</FormField>
+        <FormField label="Concepto">
+          <Input
+            value={concepto}
+            disabled={soloLectura}
+            onChange={(e) => setConcepto(e.target.value)}
+          />
+        </FormField>
 
-<FormField label="Fecha *">
-  <Input
-    type="date"
-    value={fecha}
-    disabled={soloLectura}
-    onChange={(e) => setFecha(e.target.value)}
-  />
-</FormField>
+        <FormField label="Fecha *">
+          <Input
+            type="date"
+            value={fecha}
+            disabled={soloLectura}
+            onChange={(e) => setFecha(e.target.value)}
+          />
+        </FormField>
 
-<FormField label="Categoría">
-  <Select
-    value={categoriaId}
-    disabled={soloLectura}
-    onChange={(e) => setCategoriaId(e.target.value)}
-  >
-    <option value="">Sin categoría</option>
-    {categorias
-      .filter((cat) => cat.tipo === tipo)
-      .map((cat) => (
-        <option key={cat.id} value={cat.id}>
-          {cat.nombre}
-        </option>
-      ))}
-  </Select>
-</FormField>
+        <FormField label="Categoría">
+          <Select
+            value={categoriaId}
+            disabled={soloLectura}
+            onChange={(e) => setCategoriaId(e.target.value)}
+          >
+            <option value="">Sin categoría</option>
+            {categorias
+              .filter((cat) => cat.tipo === tipo)
+              .map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.nombre}
+                </option>
+              ))}
+          </Select>
+        </FormField>
         {!soloLectura && (
           <Button variant="primary" onClick={submit}>
             {textoBoton}

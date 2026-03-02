@@ -11,18 +11,16 @@ router = APIRouter(
     tags=["Reportes Cuentas"]
 )
 
-# =====================================================
-# 1️⃣ RESUMEN GENERAL DE CUENTAS
-# =====================================================
 @router.get("/resumen")
 def resumen_cuentas(
     anio: int | None = Query(None),
     mes: int | None = Query(None),
     cuenta_id: int | None = Query(None),
+    moneda: str | None = Query(None),  # 👈 NUEVO
     db: Session = Depends(get_db)
 ):
 
-    query = db.query(Movimiento)
+    query = db.query(Movimiento).join(Cuenta)
 
     if anio:
         query = query.filter(extract("year", Movimiento.fecha) == anio)
@@ -33,6 +31,9 @@ def resumen_cuentas(
     if cuenta_id:
         query = query.filter(Movimiento.cuenta_id == cuenta_id)
 
+    if moneda:
+        query = query.filter(Cuenta.moneda == moneda)
+
     ingresos = query.filter(Movimiento.tipo == "INGRESO") \
         .with_entities(func.coalesce(func.sum(Movimiento.monto), 0)) \
         .scalar()
@@ -42,10 +43,12 @@ def resumen_cuentas(
         .scalar()
 
     return {
+        "moneda": moneda,
         "ingresos": float(ingresos),
         "egresos": float(egresos),
         "saldo": float(ingresos - egresos),
     }
+
 
 # =====================================================
 # 2️⃣ INGRESOS VS EGRESOS POR MES (GRAFICA LINEAL)
@@ -56,13 +59,15 @@ def movimientos_por_mes(
     mes: int | None = Query(None),
     cuenta_id: int | None = Query(None),
     tipo: str | None = Query(None),
+    moneda: str | None = Query(None),  # 👈 NUEVO
     db: Session = Depends(get_db)
 ):
+
     query = db.query(
         extract("month", Movimiento.fecha).label("mes"),
         Movimiento.tipo,
         func.sum(Movimiento.monto).label("total")
-    ).filter(
+    ).join(Cuenta).filter(
         extract("year", Movimiento.fecha) == anio
     )
 
@@ -74,6 +79,9 @@ def movimientos_por_mes(
 
     if tipo in ["INGRESO", "EGRESO"]:
         query = query.filter(Movimiento.tipo == tipo)
+
+    if moneda:
+        query = query.filter(Cuenta.moneda == moneda)
 
     resultados = query.group_by(
         "mes",
@@ -89,25 +97,33 @@ def movimientos_por_mes(
         data[m][r.tipo] = float(r.total)
 
     return sorted(data.values(), key=lambda x: x["mes"])
-
 # =====================================================
 # 3️⃣ DISTRIBUCION POR CATEGORIA (GRAFICA PIE)
 # =====================================================
 @router.get("/por-categoria")
 def movimientos_por_categoria(
-    tipo: str = Query(...),  # INGRESO o EGRESO
+    tipo: str = Query(...),
+    moneda: str | None = Query(None),  # 👈 NUEVO
     db: Session = Depends(get_db)
 ):
 
-    resultados = db.query(
+    query = db.query(
         CategoriaMovimiento.nombre,
         func.sum(Movimiento.monto).label("total")
     ).join(
         Movimiento,
         Movimiento.categoria_id == CategoriaMovimiento.id
+    ).join(
+        Cuenta,
+        Movimiento.cuenta_id == Cuenta.id
     ).filter(
         Movimiento.tipo == tipo
-    ).group_by(
+    )
+
+    if moneda:
+        query = query.filter(Cuenta.moneda == moneda)
+
+    resultados = query.group_by(
         CategoriaMovimiento.nombre
     ).all()
 
@@ -119,25 +135,31 @@ def movimientos_por_categoria(
         for r in resultados
     ]
 
-
-# =====================================================
-# 4️⃣ SALDO POR CUENTA (GRAFICA BARRAS)
-# =====================================================
 @router.get("/saldo-por-cuenta")
-def saldo_por_cuenta(db: Session = Depends(get_db)):
+def saldo_por_cuenta(
+    moneda: str | None = Query(None),
+    db: Session = Depends(get_db)
+):
 
-    resultados = db.query(
+    query = db.query(
         Cuenta.id,
         Cuenta.nombre,
+        Cuenta.moneda,
         Cuenta.saldo_inicial,
         Movimiento.tipo,
         func.coalesce(func.sum(Movimiento.monto), 0).label("total")
     ).outerjoin(
         Movimiento,
         Movimiento.cuenta_id == Cuenta.id
-    ).group_by(
+    )
+
+    if moneda:
+        query = query.filter(Cuenta.moneda == moneda)
+
+    resultados = query.group_by(
         Cuenta.id,
         Cuenta.nombre,
+        Cuenta.moneda,
         Cuenta.saldo_inicial,
         Movimiento.tipo
     ).all()
@@ -145,33 +167,35 @@ def saldo_por_cuenta(db: Session = Depends(get_db)):
     data_dict = {}
 
     for r in resultados:
-        if r.id not in data_dict:
-            data_dict[r.id] = {
+        key = f"{r.id}-{r.moneda}"
+
+        if key not in data_dict:
+            data_dict[key] = {
                 "cuenta": r.nombre,
-                "saldo": float(r.saldo_inicial or 0),
+                "moneda": r.moneda,
+                "saldo_inicial": float(r.saldo_inicial or 0),
                 "INGRESO": 0,
                 "EGRESO": 0,
             }
 
         if r.tipo:
-            data_dict[r.id][r.tipo] = float(r.total)
+            data_dict[key][r.tipo] = float(r.total)
 
     data = []
 
     for cuenta in data_dict.values():
         saldo_final = (
-            cuenta["saldo"]
+            cuenta["saldo_inicial"]
             + cuenta["INGRESO"]
             - cuenta["EGRESO"]
         )
 
         data.append({
             "cuenta": cuenta["cuenta"],
+            "moneda": cuenta["moneda"],
             "saldo": saldo_final
         })
 
     return data
-
-
 
 
