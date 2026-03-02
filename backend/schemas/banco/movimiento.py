@@ -15,6 +15,21 @@ from schemas.banco.categoria_movimiento import (
     CategoriaMovimientoResponse,
 )
 
+class PersonaMiniResponse(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
+
+class PeriodoMiniResponse(BaseModel):
+    id: int
+    nombre: str
+    fecha_inicio: date
+    fecha_fin: date
+
+    class Config:
+        from_attributes = True
 
 # =========================
 # BASE
@@ -59,8 +74,13 @@ class MovimientoResponse(MovimientoBase):
     id: int
     estado: EstadoMovimientoEnum
 
+    persona_id: Optional[int] = None
+    periodo_id: Optional[int] = None
+
     cuenta: CuentaResponse
     categoria: Optional[CategoriaMovimientoResponse] = None
+    persona: Optional[PersonaMiniResponse] = None
+    periodo: Optional[PeriodoMiniResponse] = None
 
     class Config:
         from_attributes = True

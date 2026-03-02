@@ -19,6 +19,8 @@ import {
   anularMovimiento,
 } from "../../../api/banco/movimiento";
 
+import { lookupPersonas } from "../../../api/persona";
+
 export default function MovimientosList() {
   // ======================
   // Estados
@@ -37,6 +39,12 @@ export default function MovimientosList() {
   const [anio, setAnio] = useState("");
   const [mes, setMes] = useState("");
   const [semanaMes, setSemanaMes] = useState("");
+
+  const [personaId, setPersonaId] = useState("");
+  const [personas, setPersonas] = useState([]);
+  useEffect(() => {
+    lookupPersonas().then(res => setPersonas(res.data));
+  }, []);
   // ======================
   // Cargar
   // ======================
@@ -46,16 +54,20 @@ export default function MovimientosList() {
         p,
         size,
         q,
-        null,
-        anio || null,
-        mes || null,
-        semanaMes || null
+        null, // cuenta_id (si luego agregas filtro por cuenta lo pones aquí)
+        personaId ? Number(personaId) : null,
+        null, // estado (si luego agregas filtro lo pones aquí)
+        anio ? Number(anio) : null,
+        mes ? Number(mes) : null,
+        semanaMes ? Number(semanaMes) : null,
+        null // dia
       );
+
       setItems(res.data.items);
       setPage(res.data.page);
       setPages(res.data.pages);
     },
-    [page, size, q, anio, mes, semanaMes]
+    [page, size, q, personaId, anio, mes, semanaMes]
   );
 
   useEffect(() => {
@@ -130,6 +142,15 @@ export default function MovimientosList() {
       key: "cuenta",
       label: "Cuenta",
       render: m => m.cuenta?.nombre || "-",
+    }, {
+      key: "persona",
+      label: "Persona",
+      render: m => m.persona?.nombre || "-",
+    },
+    {
+      key: "periodo",
+      label: "Periodo",
+      render: m => m.periodo?.nombre || "-",
     },
     {
       key: "tipo",
@@ -138,6 +159,16 @@ export default function MovimientosList() {
     {
       key: "monto",
       label: "Monto",
+      render: m => (
+        <span
+          style={{
+            color: m.tipo === "INGRESO" ? "#16a34a" : "#dc2626",
+            fontWeight: 600,
+          }}
+        >
+          {m.tipo === "INGRESO" ? "+" : "-"} Bs {m.monto}
+        </span>
+      ),
     },
     {
       key: "categoria",
@@ -211,7 +242,18 @@ export default function MovimientosList() {
           <option value="4">Semana 4 (22-28)</option>
           <option value="5">Semana 5 (29-fin)</option>
         </select>
-
+        <select
+          value={personaId}
+          onChange={e => setPersonaId(e.target.value)}
+          style={{ padding: "6px 10px" }}
+        >
+          <option value="">Todas las personas</option>
+          {personas.map(p => (
+            <option key={p.id} value={p.id}>
+              {p.nombre}
+            </option>
+          ))}
+        </select>
         {/* Botón limpiar */}
         <Button
           size="sm"

@@ -6,6 +6,8 @@ export const listarMovimientos = (
   size = 20,
   q = "",
   cuenta_id = null,
+  persona_id = null,     // 👈 NUEVO
+  estado = null,         // 👈 NUEVO
   anio = null,
   mes = null,
   semanaMes = null,
@@ -16,10 +18,12 @@ export const listarMovimientos = (
       page,
       size,
       ...(q ? { q } : {}),
-      ...(cuenta_id ? { cuenta_id } : {}),
-      ...(anio ? { anio } : {}),
-      ...(mes ? { mes } : {}),
-      ...(semanaMes ? { semana_mes: semanaMes } : {}), // 🔥 IMPORTANTE
+      ...(cuenta_id !== null ? { cuenta_id } : {}),
+      ...(persona_id !== null ? { persona_id } : {}),
+      ...(estado ? { estado } : {}),
+      ...(anio !== null ? { anio } : {}),
+      ...(mes !== null ? { mes } : {}),
+      ...(semanaMes !== null ? { semana_mes: semanaMes } : {}),
       ...(dia ? { dia } : {}),
     },
   });

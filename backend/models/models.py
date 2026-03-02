@@ -198,21 +198,26 @@ class Movimiento(Base):
     id = Column(Integer, primary_key=True)
 
     cuenta_id = Column(Integer, ForeignKey("cuentas.id"), nullable=False)
+    categoria_id = Column(Integer, ForeignKey("categorias_movimiento.id"), nullable=True)
+    persona_id = Column(Integer, ForeignKey("personas.id"), nullable=True)
+    usuario_login_id = Column(Integer, ForeignKey("usuarios_login.id"), nullable=False)
+    periodo_id = Column(Integer, ForeignKey("periodos.id"), nullable=True)
+
     tipo = Column(String(20), nullable=False)  # INGRESO / EGRESO
     monto = Column(Numeric(12, 2), nullable=False)
-
     concepto = Column(String(200))
     fecha = Column(Date, nullable=False)
 
     estado = Column(EstadoMovimientoEnum, default="ACTIVO")
 
+    # Relaciones
     cuenta = relationship("Cuenta", back_populates="movimientos")
-    categoria_id = Column(Integer, ForeignKey("categorias_movimiento.id"), nullable=True)
-    
     categoria = relationship("CategoriaMovimiento", back_populates="movimientos")
+    persona = relationship("Persona")
+    usuario = relationship("UsuarioLogin")
+    periodo = relationship("Periodo")
+
     __table_args__ = (
         CheckConstraint("monto > 0", name="ck_movimiento_monto_positivo"),
     )
-
-
 
