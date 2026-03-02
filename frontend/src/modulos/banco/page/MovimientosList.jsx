@@ -271,28 +271,32 @@ export default function MovimientosList() {
         columns={columns}
         data={items}
         onRowClick={m => ver(m.id)}
-        renderActions={m => (
-          <ActionMenu
-            primaryAction={
-              <Button size="sm" onClick={() => ver(m.id)}>
-                Ver
-              </Button>
-            }
-            items={[
-              {
-                label: "Editar",
-                icon: "✏️",
-                onClick: () => editar(m.id),
-              },
-              m.estado !== "ANULADO" && {
-                label: "Anular",
-                icon: "🗑",
-                danger: true,
-                onClick: () => anular(m.id),
-              },
-            ].filter(Boolean)}
-          />
-        )}
+       renderActions={m => {
+  const periodoCerrado = m.periodo?.cerrado;
+
+  return (
+    <ActionMenu
+      primaryAction={
+        <Button size="sm" onClick={() => ver(m.id)}>
+          Ver
+        </Button>
+      }
+      items={[
+        !periodoCerrado && {
+          label: "Editar",
+          icon: "✏️",
+          onClick: () => editar(m.id),
+        },
+        !periodoCerrado && m.estado !== "ANULADO" && {
+          label: "Anular",
+          icon: "🗑",
+          danger: true,
+          onClick: () => anular(m.id),
+        },
+      ].filter(Boolean)}
+    />
+  );
+}}
       />
 
       <Pagination

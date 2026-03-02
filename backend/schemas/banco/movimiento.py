@@ -27,6 +27,7 @@ class PeriodoMiniResponse(BaseModel):
     nombre: str
     fecha_inicio: date
     fecha_fin: date
+    cerrado: bool
 
     class Config:
         from_attributes = True

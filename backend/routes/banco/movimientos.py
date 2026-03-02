@@ -130,7 +130,6 @@ def listar(
     }
 
 
-
 @router.get("/{id}", response_model=MovimientoResponse)
 def obtener_movimiento(
     id: int,
@@ -148,33 +147,6 @@ def obtener_movimiento(
         raise HTTPException(404, "Movimiento no encontrado")
 
     return movimiento
-
-
-# @router.post("/", response_model=MovimientoResponse)
-# def crear(
-#     data: MovimientoCreate,
-#     db: Session = Depends(get_db),
-#     usuario: dict = Depends(get_current_user),
-# ):
-#     cuenta = db.get(Cuenta, data.cuenta_id)
-#     if not cuenta:
-#         raise HTTPException(404, "Cuenta no encontrada")
-
-#     movimiento = Movimiento(**data.model_dump())
-
-#     db.add(movimiento)
-#     db.commit()
-#     db.refresh(movimiento)
-
-#     db.add(Bitacora(
-#         entidad="Movimiento",
-#         entidad_id=movimiento.id,
-#         accion="CREATE",
-#         usuario_id=usuario["id"],
-#     ))
-#     db.commit()
-
-#     return movimiento
 
 
 @router.post("/", response_model=MovimientoResponse)
@@ -233,34 +205,6 @@ def crear(
     return movimiento
 
 
-# @router.put("/{id}", response_model=MovimientoResponse)
-# def actualizar(
-#     id: int,
-#     data: MovimientoUpdate,
-#     db: Session = Depends(get_db),
-#     usuario: dict = Depends(get_current_user),
-# ):
-#     movimiento = db.get(Movimiento, id)
-#     if not movimiento:
-#         raise HTTPException(404, "Movimiento no encontrado")
-
-#     for k, v in data.model_dump(exclude_unset=True).items():
-#         setattr(movimiento, k, v)
-
-#     db.commit()
-#     db.refresh(movimiento)
-
-#     db.add(Bitacora(
-#         entidad="Movimiento",
-#         entidad_id=id,
-#         accion="UPDATE",
-#         usuario_id=usuario["id"],
-#     ))
-#     db.commit()
-
-#     return movimiento
-
-
 @router.put("/{id}", response_model=MovimientoResponse)
 def actualizar(
     id: int,
@@ -272,12 +216,34 @@ def actualizar(
     if not movimiento:
         raise HTTPException(404, "Movimiento no encontrado")
 
-    # 🔒 Bloquear si periodo cerrado
+    # 🔒 Bloquear si su periodo actual está cerrado
     if movimiento.periodo and movimiento.periodo.cerrado:
-        raise HTTPException(400, "Periodo cerrado")
+        raise HTTPException(400, "No se puede modificar un movimiento de un período cerrado")
 
+    # 🔍 Si se cambia la fecha, validar nuevo periodo
+    nueva_fecha = data.fecha if data.fecha else movimiento.fecha
+
+    nuevo_periodo = (
+        db.query(Periodo)
+        .filter(
+            Periodo.fecha_inicio <= nueva_fecha,
+            Periodo.fecha_fin >= nueva_fecha
+        )
+        .first()
+    )
+
+    if not nuevo_periodo:
+        raise HTTPException(400, "No existe período para esa fecha")
+
+    if nuevo_periodo.cerrado:
+        raise HTTPException(400, "El período de la nueva fecha está cerrado")
+
+    # Aplicar cambios
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(movimiento, k, v)
+
+    # Actualizar periodo automáticamente si cambió fecha
+    movimiento.periodo_id = nuevo_periodo.id
 
     db.commit()
     db.refresh(movimiento)
@@ -292,27 +258,6 @@ def actualizar(
 
     return movimiento
 
-# @router.patch("/{id}/anular")
-# def anular(
-#     id: int,
-#     db: Session = Depends(get_db),
-#     usuario: dict = Depends(get_current_user),
-# ):
-#     movimiento = db.get(Movimiento, id)
-#     if not movimiento:
-#         raise HTTPException(404, "Movimiento no encontrado")
-
-#     movimiento.estado = "ANULADO"
-
-#     db.add(Bitacora(
-#         entidad="Movimiento",
-#         entidad_id=id,
-#         accion="ANULAR",
-#         usuario_id=usuario["id"],
-#     ))
-#     db.commit()
-
-#     return {"ok": True}
 
 @router.patch("/{id}/anular")
 def anular(
@@ -325,7 +270,10 @@ def anular(
         raise HTTPException(404, "Movimiento no encontrado")
 
     if movimiento.periodo and movimiento.periodo.cerrado:
-        raise HTTPException(400, "Periodo cerrado")
+        raise HTTPException(400, "No se puede anular un movimiento de un período cerrado")
+
+    if movimiento.estado == "ANULADO":
+        return {"ok": True, "mensaje": "Ya estaba anulado"}
 
     movimiento.estado = "ANULADO"
 
@@ -335,7 +283,10 @@ def anular(
         accion="ANULAR",
         usuario_id=usuario["id"],
     ))
+
     db.commit()
 
     return {"ok": True}
+
+
 
