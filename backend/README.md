@@ -58,47 +58,39 @@ BAJO ACOPLAMIENTO (low coupling) :Cambios no rompen todo
 ALTA COHESIÓN (high cohesion) :Todo en su lugar
 
 
-PERSONAS
+💰 Deudas
 
-GET    /personas
-POST   /personas
-PUT    /personas/{id}
-PATCH  /personas/{id}/desactivar
-PATCH  /personas/{id}/activar
+ISIDORO
+Debe a ALEXANDER
+Saldo total: Bs 227
+
+MARIA
+Debe a ALEXANDER
+Saldo total: Bs 630
+
+ELVIS
+Debe a MARIA
+Saldo total: Bs 2842
 
 
-CATEGORÍAS DE GASTO
-GET    /categorias-gasto
-POST   /categorias-gasto
-PUT    /categorias-gasto/{id}
-PATCH  /categorias-gasto/{id}/desactivar
-PATCH  /categorias-gasto/{id}/activar
+ISIDORO → ALEXANDER
 
-PERÍODOS
-GET    /periodos
-POST   /periodos
-PATCH /periodos/{id}
-PATCH  /periodos/{id}/cerrar
-PATCH  /periodos/{id}/reabrir
-GET    /periodos/{id}/resumen
 
-APORTES
-GET    /aportes
-POST   /aportes
-PUT    /aportes/{id}
-PATCH  /aportes/{id}/anular
+ISIDORO → ALEXANDER
+--------------------------------
 
-GASTOS
-GET    /gastos
-POST   /gastos
-PUT    /gastos/{id}
-PATCH  /gastos/{id}/anular
+Total prestado: Bs 2023
+Total pagado: Bs 1796
+Saldo pendiente: Bs 227
 
-REPORTES 
-GET /reportes/balance
-GET /reportes/aportes
-GET /reportes/gastos
-GET /reportes/periodos/{id}/balance
-GET /reportes/personas
-GET /reportes/gastos/categorias
-GET /reportes/periodos/comparar
+Historial
+--------------------------------
+
+➕ Prestamo
++2023   05 Mar 2026
+
+💵 Pago
+-1000   10 Mar 2026
+
+💵 Pago
+-796    15 Mar 2026

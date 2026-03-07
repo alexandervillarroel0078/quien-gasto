@@ -79,6 +79,14 @@ const NAV_MODULES = {
       { label: "Reportes", path: "/banco/reportes", icon: "📊" }, // 👈 NUEVO
     ],
   },
+  prestamos: {
+    title: "Deudas",
+    icon: "💰",
+    routes: ["/deudas"],
+    items: [
+      { label: "Deudas", path: "/deudas", icon: "💰" },
+    ],
+  },
 
 };
 

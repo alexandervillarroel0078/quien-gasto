@@ -12,6 +12,8 @@ from seeds.seed_categorias_movimiento import seed_categorias_movimiento
 from seeds.seed_cuentas import seed_cuentas
 from seeds.seed_movimientos import seed_movimientos
 
+from seeds.seed_prestamos import seed_prestamos
+
 def run_seeds():
     db = SessionLocal()
     try:
@@ -38,8 +40,7 @@ def run_seeds():
         seed_categorias_movimiento(db, 20)
         seed_cuentas(db, 15)
         seed_movimientos(db, 200)
-
-
+        seed_prestamos(db, 50)
 
 
 

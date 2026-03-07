@@ -221,3 +221,40 @@ class Movimiento(Base):
         CheckConstraint("monto > 0", name="ck_movimiento_monto_positivo"),
     )
 
+
+
+
+class Prestamo(Base):
+    __tablename__ = "prestamos"
+
+    id = Column(Integer, primary_key=True)
+
+    prestamista_id = Column(Integer, ForeignKey("personas.id"))
+    deudor_id = Column(Integer, ForeignKey("personas.id"))
+
+    monto = Column(Numeric(12,2), nullable=False)
+    saldo_pendiente = Column(Numeric(12,2), nullable=False)
+
+    fecha = Column(Date, nullable=False)
+    concepto = Column(String(200))
+    estado = Column(String(20), default="ACTIVO")
+
+    prestamista = relationship("Persona", foreign_keys=[prestamista_id])
+    deudor = relationship("Persona", foreign_keys=[deudor_id])
+
+    pagos = relationship("PagoPrestamo", back_populates="prestamo")
+
+
+class PagoPrestamo(Base):
+    __tablename__ = "pagos_prestamo"
+
+    id = Column(Integer, primary_key=True)
+
+    prestamo_id = Column(Integer, ForeignKey("prestamos.id"))
+
+    monto = Column(Numeric(12,2), nullable=False)
+    fecha = Column(Date, nullable=False)
+
+    usuario_login_id = Column(Integer, ForeignKey("usuarios_login.id"))
+
+    prestamo = relationship("Prestamo", back_populates="pagos")

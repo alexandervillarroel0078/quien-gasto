@@ -18,6 +18,7 @@ import CategoriaMovimientoRoutes from "./categoriamovimiento.routes";
 import CuentaRoutes from "./cuenta.routes";
 import MovimientoRoutes from "./movimiento.routes";
 import ReporteCuentasRoutes from "./reportecuentas.routes";
+import PrestamoRoutes from "./prestamo.routes";
 
 export default function AppRoutes() {
   return (
@@ -47,6 +48,7 @@ export default function AppRoutes() {
           {CuentaRoutes}
           {MovimientoRoutes}
           {ReporteCuentasRoutes}
+          {PrestamoRoutes}
         </Route>
       </Routes>
     </BrowserRouter>
