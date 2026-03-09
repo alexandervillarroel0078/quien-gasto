@@ -24,23 +24,23 @@ def run_seeds():
  
         db.commit()
 
-         # ===============================
-        # 2️⃣ CATÁLOGOS
-        # ===============================
-        seed_periodos(db)
-        seed_categorias_gasto(db)
-        db.commit()
+        #  # ===============================
+        # # 2️⃣ CATÁLOGOS
+        # # ===============================
+        # seed_periodos(db)
+        # seed_categorias_gasto(db)
+        # db.commit()
 
-        # ===============================
-        # 3️⃣ MOVIMIENTOS
-        # ===============================
-        seed_aportes(db, 100)
-        seed_gastos(db, 120)
+        # # ===============================
+        # # 3️⃣ MOVIMIENTOS
+        # # ===============================
+        # seed_aportes(db, 100)
+        # seed_gastos(db, 120)
 
-        seed_categorias_movimiento(db, 20)
-        seed_cuentas(db, 15)
-        seed_movimientos(db, 200)
-        seed_prestamos(db, 50)
+        # seed_categorias_movimiento(db, 20)
+        # seed_cuentas(db, 15)
+        # seed_movimientos(db, 200)
+        # seed_prestamos(db, 50)
 
 
 
