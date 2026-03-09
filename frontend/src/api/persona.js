@@ -1,6 +1,14 @@
 // frontend/src/api/persona.js
 import api from "./api";
 
+// =========================
+// LOOKUP PERSONAS
+// =========================
+export const lookupPersonas = (q = "") =>
+  api.get("/personas/lookup", {
+    params: q ? { q } : {},
+  });
+  
 export const listarPersonas = (page = 1, size = 20, q = "") =>
   api.get("/personas/", { params: { page, size, q } });
 
@@ -19,10 +27,4 @@ export const desactivarPersona = (id) =>
 export const activarPersona = (id) =>
   api.patch(`/personas/${id}/activar`);
 
-// =========================
-// LOOKUP PERSONAS
-// =========================
-export const lookupPersonas = (q = "") =>
-  api.get("/personas/lookup", {
-    params: q ? { q } : {},
-  });
+ 

@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import date
 from decimal import Decimal
+from models.models import EstadoPrestamoEnum
 
 
 # =========================
@@ -48,10 +49,8 @@ class PagoPrestamoResponse(PagoPrestamoBase):
 class PrestamoBase(BaseModel):
     prestamista_id: int
     deudor_id: int
-
     monto: Decimal
     fecha: date
-
     concepto: Optional[str] = None
 
 
@@ -61,7 +60,7 @@ class PrestamoCreate(PrestamoBase):
 
 class PrestamoUpdate(BaseModel):
     concepto: Optional[str] = None
-    estado: Optional[str] = None
+    estado: Optional[EstadoPrestamoEnum] = None
 
 
 class PrestamoResponse(BaseModel):
@@ -76,9 +75,9 @@ class PrestamoResponse(BaseModel):
     fecha: date
     concepto: Optional[str]
 
-    estado: str
+    estado: EstadoPrestamoEnum
 
-    pagos: List[PagoPrestamoResponse] = []
+    pagos: List[PagoPrestamoResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

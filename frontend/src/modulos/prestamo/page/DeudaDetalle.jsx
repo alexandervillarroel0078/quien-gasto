@@ -4,7 +4,8 @@ import { useParams } from "react-router-dom";
 import Layout from "../../../layouts/Layout";
 import {
     historialDeuda,
-    registrarPagoPrestamo
+    registrarPagoPrestamo,
+    anularPrestamo
 } from "../../../api/prestamo";
 
 function formatFecha(str) {
@@ -21,7 +22,9 @@ export default function DeudaDetalle() {
     const [pagoMonto, setPagoMonto] = useState("");
     const [pagoFecha, setPagoFecha] = useState(new Date().toISOString().slice(0, 10));
     const [enviando, setEnviando] = useState(false);
-
+    const [detalleHistorial, setDetalleHistorial] = useState(null);
+    const [detallePrestamo, setDetallePrestamo] = useState(null);
+    const [filtroEstado, setFiltroEstado] = useState("ACTIVO");
     useEffect(() => {
         cargar();
     }, [deudor_id, acreedor_id]);
@@ -37,34 +40,81 @@ export default function DeudaDetalle() {
             setCargando(false);
         }
     };
+    // prestamos activos
+    const prestamosActivos = prestamos.filter(
+        (p) => p.estado === "ACTIVO" && Number(p.saldo_pendiente) > 0
+    );
 
-    const totalPrestado = prestamos.reduce((a, p) => a + Number(p.monto), 0);
-    const totalSaldo = prestamos.reduce((a, p) => a + Number(p.saldo_pendiente), 0);
+    // totales
+    const totalPrestado = prestamosActivos.reduce(
+        (a, p) => a + Number(p.monto),
+        0
+    );
+
+    const totalSaldo = prestamosActivos.reduce(
+        (a, p) => a + Number(p.saldo_pendiente),
+        0
+    );
+
     const totalPagado = totalPrestado - totalSaldo;
 
-    // Historial unificado: préstamos y pagos ordenados por fecha
     const historial = [];
+
     prestamos.forEach((p) => {
-        historial.push({ tipo: "prestamo", fecha: p.fecha, monto: Number(p.monto), id: `p-${p.id}` });
+
+        // préstamo anulado
+        if (p.estado === "ANULADO") {
+            historial.push({
+                tipo: "anulado",
+                fecha: p.fecha,
+                monto: Number(p.monto),
+                id: `a-${p.id}`
+            });
+            return;
+        }
+
+        // préstamo normal
+        historial.push({
+            tipo: "prestamo",
+            fecha: p.fecha,
+            monto: Number(p.monto),
+            id: `p-${p.id}`
+        });
+
+        // pagos
         (p.pagos || []).forEach((pg) => {
             historial.push({
                 tipo: "pago",
                 fecha: pg.fecha,
                 monto: -Number(pg.monto),
-                id: `g-${pg.id}`,
+                id: `g-${pg.id}`
             });
         });
+
     });
+
     historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-    const prestamosActivos = prestamos.filter(
-        (p) => p.estado === "ACTIVO" && Number(p.saldo_pendiente) > 0
-    );
-
+    const handleVerPrestamo = (prestamo) => {
+        setDetallePrestamo(prestamo);
+    };
     const handleAbrirPagar = (prestamo) => {
         setPagoModal(prestamo);
         setPagoMonto("");
         setPagoFecha(new Date().toISOString().slice(0, 10));
+    };
+
+    const handleAnular = async (id) => {
+
+        if (!window.confirm("¿Seguro que quieres anular este préstamo?")) return;
+
+        try {
+            await anularPrestamo(id);
+            alert("Préstamo anulado");
+            cargar();
+        } catch (err) {
+            alert(err.response?.data?.detail || "Error al anular");
+        }
     };
 
     const handleRegistrarPago = async (e) => {
@@ -89,7 +139,10 @@ export default function DeudaDetalle() {
 
     const nombreDeudor = prestamos[0]?.deudor?.nombre ?? "Deudor";
     const nombreAcreedor = prestamos[0]?.prestamista?.nombre ?? "Acreedor";
-
+    const prestamosFiltrados = prestamos.filter((p) => {
+        if (filtroEstado === "TODOS") return true;
+        return p.estado === filtroEstado;
+    });
     return (
         <Layout>
             <h2>📜 Deuda: {nombreDeudor} → {nombreAcreedor}</h2>
@@ -110,39 +163,98 @@ export default function DeudaDetalle() {
                             </div>
                         </div>
                     </div>
-
+                    <select
+                        value={filtroEstado}
+                        onChange={(e) => setFiltroEstado(e.target.value)}
+                        style={{
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            border: "1px solid #e5e7eb",
+                            background: "#ffffff",
+                            fontSize: 14,
+                            fontWeight: 500,
+                            marginBottom: 16,
+                            cursor: "pointer"
+                        }}
+                    >
+                        <option value="ACTIVO">🔴 Activos</option>
+                        <option value="PAGADO">🟢 Pagados</option>
+                        <option value="ANULADO">⚪ Anulados</option>
+                        <option value="TODOS">📄 Todos</option>
+                    </select>
                     {/* Registrar pago: solo si hay préstamos activos con saldo */}
-                    {prestamosActivos.length > 0 && (
+                    {prestamosFiltrados.length > 0 && (
                         <div style={{ marginBottom: 24 }}>
                             <h3 style={{ marginBottom: 8 }}>💵 Registrar pago</h3>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                                {prestamosActivos.map((p) => (
+                                {prestamosFiltrados.map((p) => (
                                     <div
                                         key={p.id}
                                         style={{
                                             border: "1px solid #e5e7eb",
                                             borderRadius: 8,
                                             padding: 12,
-                                            background: "white",
+                                            background:
+                                                p.estado === "ACTIVO"
+                                                    ? "#fee2e2"      // rojo claro
+                                                    : p.estado === "PAGADO"
+                                                        ? "#dcfce7"      // verde claro
+                                                        : "#f3f4f6",     // gris (anulado)
                                         }}
                                     >
                                         <div style={{ marginBottom: 4 }}>
                                             Préstamo Bs {Number(p.monto).toLocaleString()} — Saldo: Bs{" "}
                                             {Number(p.saldo_pendiente).toLocaleString()}
                                         </div>
+
+                                        {p.estado === "ACTIVO" && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAbrirPagar(p)}
+                                                    style={{
+                                                        padding: "6px 12px",
+                                                        background: "#16a34a",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: 6,
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    Pagar
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAnular(p.id)}
+                                                    style={{
+                                                        marginLeft: 8,
+                                                        background: "#dc2626",
+                                                        color: "white",
+                                                        border: "none",
+                                                        padding: "6px 12px",
+                                                        borderRadius: 6,
+                                                        cursor: "pointer"
+                                                    }}
+                                                >
+                                                    Anular
+                                                </button>
+                                            </>
+                                        )}
                                         <button
                                             type="button"
-                                            onClick={() => handleAbrirPagar(p)}
+                                            onClick={() => handleVerPrestamo(p)}
                                             style={{
-                                                padding: "6px 12px",
-                                                background: "#16a34a",
+                                                marginLeft: 8,
+                                                background: "#2563eb",
                                                 color: "white",
                                                 border: "none",
+                                                padding: "6px 12px",
                                                 borderRadius: 6,
-                                                cursor: "pointer",
+                                                cursor: "pointer"
                                             }}
                                         >
-                                            Pagar
+                                            Ver
                                         </button>
                                     </div>
                                 ))}
@@ -237,7 +349,80 @@ export default function DeudaDetalle() {
                             </div>
                         </div>
                     )}
+                    {detallePrestamo && (
+                        <div
+                            style={{
+                                position: "fixed",
+                                inset: 0,
+                                background: "rgba(0,0,0,0.4)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: 1000
+                            }}
+                            onClick={() => setDetallePrestamo(null)}
+                        >
+                            <div
+                                style={{
+                                    background: "white",
+                                    padding: 24,
+                                    borderRadius: 12,
+                                    width: 340
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <h3>Detalle del préstamo</h3>
 
+                                <p>Monto: Bs {detallePrestamo.monto}</p>
+
+                                <p>Saldo pendiente: Bs {detallePrestamo.saldo_pendiente}</p>
+
+                                <p>Fecha: {formatFecha(detallePrestamo.fecha)}</p>
+
+                                <p>Concepto: {detallePrestamo.concepto || "—"}</p>
+                                <h4 style={{ marginTop: 12 }}>Historial</h4>
+
+                                {detallePrestamo.pagos && detallePrestamo.pagos.length > 0 ? (
+                                    <div style={{ marginTop: 8 }}>
+                                        {detallePrestamo.pagos.map((pg) => (
+                                            <div
+                                                key={pg.id}
+                                                style={{
+                                                    padding: 6,
+                                                    borderBottom: "1px solid #eee",
+                                                    display: "flex",
+                                                    justifyContent: "space-between"
+                                                }}
+                                            >
+                                                <span>💵 Pago</span>
+
+                                                <span>-Bs {Number(pg.monto).toLocaleString()}</span>
+
+                                                <span style={{ color: "#6b7280" }}>
+                                                    {formatFecha(pg.fecha)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p style={{ color: "#6b7280" }}>Sin pagos registrados</p>
+                                )}
+                                <button
+                                    onClick={() => setDetallePrestamo(null)}
+                                    style={{
+                                        marginTop: 12,
+                                        padding: "8px 16px",
+                                        background: "#2563eb",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: 6
+                                    }}
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <h3 style={{ marginBottom: 8 }}>Historial</h3>
                     <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 12 }}>
                         {historial.length === 0 ? (
@@ -252,11 +437,24 @@ export default function DeudaDetalle() {
                                             alignItems: "center",
                                             gap: 12,
                                             padding: 8,
-                                            background: h.tipo === "pago" ? "#f0fdf4" : "#fffbeb",
+                                            // background: h.tipo === "pago" ? "#f0fdf4" : "#fffbeb",
+                                            background:
+                                                h.tipo === "pago"
+                                                    ? "#f0fdf4"
+                                                    : h.tipo === "anulado"
+                                                        ? "#fee2e2"
+                                                        : "#fffbeb",
                                             borderRadius: 6,
                                         }}
                                     >
-                                        <span>{h.tipo === "prestamo" ? "➕ Préstamo" : "💵 Pago"}</span>
+                                        {/* <span>{h.tipo === "prestamo" ? "➕ Préstamo" : "💵 Pago"}</span> */}
+                                        <span>
+                                            {
+                                                h.tipo === "prestamo" ? "➕ Préstamo" :
+                                                    h.tipo === "pago" ? "💵 Pago" :
+                                                        "❌ Préstamo anulado"
+                                            }
+                                        </span>
                                         <span style={{ fontWeight: 600 }}>
                                             {h.monto >= 0 ? "+" : ""}
                                             {h.monto.toLocaleString()}

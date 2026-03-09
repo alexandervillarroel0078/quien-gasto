@@ -221,8 +221,13 @@ class Movimiento(Base):
         CheckConstraint("monto > 0", name="ck_movimiento_monto_positivo"),
     )
 
+import enum
+from sqlalchemy import Enum
 
-
+class EstadoPrestamoEnum(str, enum.Enum):
+    ACTIVO = "ACTIVO"
+    PAGADO = "PAGADO"
+    ANULADO = "ANULADO"
 
 class Prestamo(Base):
     __tablename__ = "prestamos"
@@ -237,7 +242,12 @@ class Prestamo(Base):
 
     fecha = Column(Date, nullable=False)
     concepto = Column(String(200))
-    estado = Column(String(20), default="ACTIVO")
+    
+    estado = Column(
+        Enum(EstadoPrestamoEnum),
+        default=EstadoPrestamoEnum.ACTIVO,
+        nullable=False
+    )
 
     prestamista = relationship("Persona", foreign_keys=[prestamista_id])
     deudor = relationship("Persona", foreign_keys=[deudor_id])

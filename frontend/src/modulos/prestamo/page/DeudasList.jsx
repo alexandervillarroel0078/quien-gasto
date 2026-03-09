@@ -2,8 +2,6 @@
 import { useEffect, useState } from "react";
 import Layout from "../../../layouts/Layout";
 
-import { resumenDeudas, crearPrestamo } from "../../../api/prestamo";
-
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../../shared/components/Button";
@@ -11,38 +9,89 @@ import Drawer from "../../../shared/components/Drawer";
 
 import PrestamoForm from "../components/PrestamoForm";
 
+
+import { resumenDeudas, crearPrestamo } from "../../../api/prestamo";
+import { lookupPersonas } from "../../../api/persona";
+
+
 export default function DeudasList() {
 
-  const [items, setItems] = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const [meDeben, setMeDeben] = useState([]);
+  const [yoDebo, setYoDebo] = useState([]);
 
+  const [cargando, setCargando] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
 
+  const [personas, setPersonas] = useState([]);
+  const [personaId, setPersonaId] = useState(null);
+  const [estado, setEstado] = useState("ACTIVO");
   const navigate = useNavigate();
 
+  // ======================
+  // cargar personas
+  // ======================
   useEffect(() => {
-    cargar();
+    lookupPersonas().then(res => setPersonas(res.data));
   }, []);
 
+  // ======================
+  // cargar deudas
+  // ======================
   const cargar = async () => {
     setCargando(true);
 
     try {
-      const res = await resumenDeudas();
-      setItems(Array.isArray(res?.data) ? res.data : []);
+      const res = await resumenDeudas(personaId, estado);
+
+      setMeDeben(res.data?.me_deben || []);
+      setYoDebo(res.data?.yo_debo || []);
+
     } catch {
-      setItems([]);
+      setMeDeben([]);
+      setYoDebo([]);
     } finally {
       setCargando(false);
     }
   };
 
+  useEffect(() => {
+    cargar();
+  }, [personaId, estado]);
+
+  // ======================
+  // crear prestamo
+  // ======================
   const guardar = async (data) => {
     await crearPrestamo(data);
     setMostrarForm(false);
     cargar();
   };
 
+  const estiloCard = (estado) => {
+
+    if (estado === "PAGADO") {
+      return {
+        background: "#f6f3f3",
+        border: "1px solid #d1d5db",
+        opacity: 0.8
+      };
+    }
+
+    if (estado === "ANULADO") {
+      return {
+        background: "#fee2e2",
+        border: "1px solid #fca5a5"
+      };
+    }
+
+    return {
+      background: "#fefefe",
+      border: "1px solid #de1414"
+    };
+  };
+  // ======================
+  // render
+  // ======================
   return (
     <Layout>
 
@@ -55,7 +104,6 @@ export default function DeudasList() {
           marginBottom: 20
         }}
       >
-
         <h2>💰 Deudas</h2>
 
         <Button
@@ -64,69 +112,169 @@ export default function DeudasList() {
         >
           + Nuevo préstamo
         </Button>
-
       </div>
 
-      {/* LISTA */}
+      {/* FILTRO PERSONA */}
+      <div style={{ marginBottom: 20 }}>
+
+        <select
+          value={personaId ?? ""}
+          onChange={(e) =>
+            setPersonaId(e.target.value ? Number(e.target.value) : null)
+          }
+          style={{
+            minWidth: 220,
+            height: 36,
+            padding: "6px 12px",
+            borderRadius: 8,
+            border: "1px solid #2b2d33",
+            background: "#111217",
+            color: "#ffffff",
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+        >
+          <option value="">Todas las personas</option>
+
+          {personas.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.nombre}
+            </option>
+          ))}
+        </select>
+        {/* FILTRO ESTADO */}
+        <select
+          value={estado}
+          onChange={(e) => setEstado(e.target.value)}
+          style={{
+            minWidth: 180,
+            height: 36,
+            padding: "6px 12px",
+            borderRadius: 8,
+            border: "1px solid #2b2d33",
+            background: "#111217",
+            color: "#ffffff",
+            fontWeight: 500,
+            cursor: "pointer",
+            marginLeft: 10
+          }}
+        >
+          <option value="ACTIVO">Activos</option>
+          <option value="PAGADO">Pagados</option>
+          <option value="ANULADO">Anulados</option>
+          <option value="">Todos</option>
+        </select>
+      </div>
+
+      {/* LISTAS */}
       {cargando ? (
         <p>Cargando...</p>
       ) : (
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-            gap: 16,
-          }}
-        >
+        <>
+          {/* ME DEBEN */}
+          <h3 style={{ marginBottom: 10 }}>💰 Me deben</h3>
 
-          {items.map((d, i) => (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gap: 16,
+              marginBottom: 30
+            }}
+          >
 
-            <div
-              key={d.deudor_id && d.acreedor_id ? `${d.deudor_id}-${d.acreedor_id}` : i}
-              onClick={() => navigate(`/deudas/${d.deudor_id}/${d.acreedor_id}`)}
-              style={{
-                borderRadius: 10,
-                padding: 18,
-                background: "#ffffff",
-                border: "1px solid #e5e7eb",
-                cursor: "pointer",
-                transition: "all 0.15s",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.05)"
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
-            >
-
-              <div style={{ fontSize: 18, fontWeight: 700 }}>
-                {d.deudor}
-              </div>
-
-              <div style={{ marginTop: 6, fontSize: 14, color: "#6b7280" }}>
-                debe a
-              </div>
-
-              <div style={{ fontSize: 16, fontWeight: 600 }}>
-                {d.acreedor}
-              </div>
+            {meDeben.map((d, i) => (
 
               <div
+                key={d.persona_id || i}
+                onClick={() => navigate(`/deudas/${d.deudor_id}/${d.acreedor_id}`)}
+ 
                 style={{
-                  marginTop: 12,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: "#dc2626"
+                  borderRadius: 10,
+                  padding: 18,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                  ...estiloCard(d.estado)
                 }}
               >
-                Bs {Number(d.saldo).toLocaleString()}
+
+                <div style={{ fontSize: 18, fontWeight: 700 }}>
+                  {d.nombre}
+                </div>
+
+                <div style={{ marginTop: 6, fontSize: 14, color: "#6b7280" }}>
+                  te debe
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 12,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: "#16a34a"
+                  }}
+                >
+                  Bs {Number(d.saldo).toLocaleString()}
+                </div>
+
               </div>
 
-            </div>
+            ))}
 
-          ))}
+          </div>
 
-        </div>
+          {/* YO DEBO */}
+          <h3 style={{ marginBottom: 10 }}>💸 Yo debo</h3>
 
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gap: 16,
+            }}
+          >
+
+            {yoDebo.map((d, i) => (
+
+              <div
+                key={d.persona_id || i}
+                onClick={() => navigate(`/deudas/${d.deudor_id}/${d.acreedor_id}`)}
+                style={{
+                  borderRadius: 10,
+                  padding: 18,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                  ...estiloCard(d.estado)
+                }}
+              >
+
+                <div style={{ fontSize: 18, fontWeight: 700 }}>
+                  {d.nombre}
+                </div>
+
+                <div style={{ marginTop: 6, fontSize: 14, color: "#6b7280" }}>
+                  le debes
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 12,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: "#dc2626"
+                  }}
+                >
+                  Bs {Number(d.saldo).toLocaleString()}
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </>
       )}
 
       {/* FORMULARIO */}
