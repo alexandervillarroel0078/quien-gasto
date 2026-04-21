@@ -42,6 +42,8 @@ git add .
 git commit -m "nuevo"
 git push origin main
 
+pip freeze > requirements.txt
+
 cd frontend
 git add .
 git commit -m "nuevo"
